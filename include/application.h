@@ -8,6 +8,7 @@
 
 #include <list>
 #include <memory>
+#include <set>
 #include <vector>
 
 #include "luastate.h"
@@ -34,8 +35,14 @@ public:
   Entity* SpawnEntity(const luabind::object& script);
   
   Entity* GetEntityById(int entityId);
+  Entity* GetEntityByName(const std::string& name);
   
   const std::vector<Entity*>& GetEntities() const { return _entities; }
+  
+  const std::set<Entity*>& GetEntitiesByType(const std::string& type);
+  
+  //luabind::object& GetApplicationScript() const { return _applicationScript; }
+  //luabind::object& GetSteeringBehaviorsScript() const { return _steeringBehaviorsScript; }
   
   bool IsButtonUpPressed() const { return IsButtonPressed(ButtonUp); }
   bool IsButtonDownPressed() const { return IsButtonPressed(ButtonDown); }
@@ -68,12 +75,15 @@ private:
 
   std::vector<Entity*> _entities;
   std::map<int, Entity*> _entityMap;
+  std::map<std::string, Entity*> _entityNamesMap;
+  std::map<std::string, std::set<Entity*>> _entityTypesMap; 
   
   std::vector<Entity*> _spawnedEntities;
     
   std::unique_ptr<LuaState> _luaState;
   luabind::object _script;  
-  luabind::object _application;  
+  luabind::object _applicationScript;
+  //luabind::object _steeringBehaviorsScript;
   
   Vector2d _viewportTranslate;
   Matrix3 _viewportTransformation;

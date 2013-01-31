@@ -3,11 +3,12 @@ require "scripts/crosshair_state_default"
 require "scripts/entity"
 
 Crosshair = Entity:new {
-  initial_entity_type = 3,
+  type = "crosshair",
 }
 
 function Crosshair:initialize (crosshair)
-  crosshair.entity_type = self.initial_entity_type
+  crosshair.name = "crosshair"
+  crosshair.type = self.type
   crosshair.is_active = true
   crosshair.is_collidable = false
   

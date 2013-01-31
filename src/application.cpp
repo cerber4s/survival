@@ -1,5 +1,6 @@
 #include "application.h"
 
+#include <algorithm>
 #include <iostream>
 #include <cmath>
 #include <ctime>
@@ -22,23 +23,23 @@
 
 int add_file_and_line(lua_State* L)
 {
-   lua_Debug d;
-   lua_getstack(L, 1, &d);
-   lua_getinfo(L, "Sln", &d);
-   std::string err = lua_tostring(L, -1);
-   lua_pop(L, 1);
-   std::stringstream msg;
-   msg << d.short_src << ":" << d.currentline;
+  lua_Debug d;
+  lua_getstack(L, 1, &d);
+  lua_getinfo(L, "Sln", &d);
+  std::string err = lua_tostring(L, -1);
+  lua_pop(L, 1);
+  std::stringstream msg;
+  msg << d.short_src << ":" << d.currentline;
 
-   if (d.name != 0)
-   {
-      msg << "(" << d.namewhat << " " << d.name << ")";
-   }
-   msg << " " << err;
-   
-   std::cout << msg.str() << std::endl;
-   lua_pushstring(L, msg.str().c_str());
-   return 1;
+  if (d.name != 0)
+  {
+    msg << "(" << d.namewhat << " " << d.name << ")";
+  }
+  msg << " " << err;
+
+  std::cout << msg.str() << std::endl;
+  lua_pushstring(L, msg.str().c_str());
+return 1;
 }
 
 Application::Application() :
@@ -71,6 +72,8 @@ Application::Application() :
 
 Application::~Application()
 {
+  _entityNamesMap.clear();
+  
   BOOST_FOREACH(Entity* entity, _entityPool)
   {
     delete entity;
@@ -139,14 +142,23 @@ bool Application::Initialize()
   al_register_event_source(_eventQueue, al_get_mouse_event_source());
   al_register_event_source(_eventQueue, al_get_display_event_source(_renderSystem->GetDisplay()));
  
-  _application = _script["application"];
-  if (!_application.is_valid())
+  _applicationScript = _script["application"];
+  if (!_applicationScript.is_valid())
   {
-    std::cout << "application is invalid" << std::endl;
+    std::cout << "application script is invalid" << std::endl;
     return false;
   }
   
-  luabind::call_function<void>(_application["initialize"], _application, this);
+  /*
+  _steeringBehaviorsScript = _script["steering_behaviors"];
+  if (!_steeringBehaviorsScript.is_valid())
+  {
+    std::cout << "steering behaviors script is invalid" << std::endl;
+    return false;
+  }
+  */
+  
+  luabind::call_function<void>(_applicationScript["initialize"], _applicationScript, this);
   
   return true;
 }
@@ -231,10 +243,30 @@ Entity* Application::SpawnEntity(const luabind::object& script)
   
   Entity* entity = _entityPool.back();
   entity->SetScript(script);
+  entity->Initialize();
   
   _entityPool.pop_back();
-  
   _spawnedEntities.push_back(entity);
+  
+  std::map<std::string, Entity*>::const_iterator name_iter = _entityNamesMap.find(entity->GetName());
+  if (name_iter != _entityNamesMap.end())
+  {
+    throw std::runtime_error((boost::format("entity name '%s' (type: '%s')is already registered") % entity->GetName() % entity->GetType()).str());
+  }
+  
+  _entityNamesMap[entity->GetName()] = entity;
+
+  std::map<std::string, std::set<Entity*>>::iterator i = _entityTypesMap.find(entity->GetType());
+  if (i == _entityTypesMap.end())
+  {
+    _entityTypesMap[entity->GetType()] = std::set<Entity*>();
+    _entityTypesMap[entity->GetType()].insert(entity);
+    //.push_back(entity);
+  }
+  else
+  {
+    (*i).second.insert(entity);
+  }
   
   return entity;
 }
@@ -248,8 +280,32 @@ Entity* Application::GetEntityById(int entityId)
   {
     entity = (*i).second;
   }
+ 
+  return entity;
+}
+
+Entity* Application::GetEntityByName(const std::string& name)
+{
+  std::map<std::string, Entity*>::const_iterator i = _entityNamesMap.find(name);  
+  
+  Entity* entity = nullptr;
+  if (i != _entityNamesMap.end())
+  {
+    entity = (*i).second;
+  }
   
   return entity;
+}
+
+const std::set<Entity*>& Application::GetEntitiesByType(const std::string& type)
+{
+  static std::set<Entity*> emptyResult;
+  std::map<std::string, std::set<Entity*>>::const_iterator i = _entityTypesMap.find(type);
+  if (i != _entityTypesMap.end())
+  {
+    return (*i).second;
+  }
+  return emptyResult;
 }
 
 void Application::CalculateViewportTransformations()
@@ -278,7 +334,7 @@ bool Application::Update()
     _spawnedEntities.clear();
   }
   
-  luabind::call_function<void>(_application["update"], _application, this, 1.0);
+  luabind::call_function<void>(_applicationScript["update"], _applicationScript, this, 1.0);
   
   BOOST_FOREACH(Entity* entity, _entities)
   {
@@ -303,7 +359,7 @@ void Application::Render()
  
   al_set_blender(ALLEGRO_ADD, ALLEGRO_ALPHA, ALLEGRO_INVERSE_ALPHA);
  
-  luabind::call_function<void>(_application["render"], _application, this, _renderSystem);
+  luabind::call_function<void>(_applicationScript["render"], _applicationScript, this, _renderSystem);
   
   /*
   BOOST_FOREACH(Entity* entity, _entities)
@@ -412,6 +468,20 @@ void Application::ClearInactiveEntities()
       _entityPool.push_back(entity);
       
       _entityMap.erase(entity->GetId());
+      
+      _entityNamesMap.erase(entity->GetName());
+      
+      std::map<std::string, std::set<Entity*>>::iterator i2 = _entityTypesMap.find(entity->GetType());
+      if (i2 != _entityTypesMap.end())
+      {
+        //(*i2).second.erase(std::find((*i2).second.begin(), (*i2).second.end(), entity));
+        (*i2).second.erase(entity);
+      }    
+      else
+      {
+        throw std::runtime_error((boost::format("type '%s' not found in entity types map") % entity->GetType()).str());
+      }
+      
       i = _entities.erase(i);
     }
     else
@@ -476,8 +546,8 @@ Vector2d Application::GetViewportTranslate() const
 
 void Application::SetViewportTranslate(const Vector2d& viewportTranslate)
 {
-    _viewportTranslate = viewportTranslate;
-    CalculateViewportTransformations();
+  _viewportTranslate = viewportTranslate;
+  CalculateViewportTransformations();
 }
 
 Matrix3 Application::GetViewportTransformation() const
@@ -497,6 +567,8 @@ void Application::RegisterWithLua(lua_State* L)
     luabind::class_<Application>("application")
       .def("spawn_entity", &Application::SpawnEntity)
       .def("get_entity_by_id", &Application::GetEntityById)
+      .def("get_entity_by_name", &Application::GetEntityByName)
+      .def("get_entities_by_type", &Application::GetEntitiesByType, luabind::return_stl_iterator)
       .property("is_button_up_pressed", &Application::IsButtonUpPressed)
       .property("is_button_down_pressed", &Application::IsButtonDownPressed)
       .property("is_button_left_pressed", &Application::IsButtonLeftPressed)
@@ -511,5 +583,5 @@ void Application::RegisterWithLua(lua_State* L)
       .property("viewport_transformation", &Application::GetViewportTransformation)
       .property("viewport_inverse_transformation", &Application::GetViewportInverseTransformation)
       .property("entities", &Application::GetEntities, luabind::return_stl_iterator)
-  ];
+  ];    
 }

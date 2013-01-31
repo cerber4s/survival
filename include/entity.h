@@ -4,11 +4,14 @@
 #include <lua.hpp>
 #include <luabind/luabind.hpp>
 
+#include <string>
+
 #include "scriptedstatemachine.h"
 #include "vector2d.h"
 
 class Application;
 class RenderSystem;
+class SteeringBehaviors;
 
 class Entity
 {
@@ -17,10 +20,15 @@ public:
   virtual ~Entity();
   
   Application* GetApplication() const;
-  int GetId() const;
+  SteeringBehaviors* GetSteeringBehaviors() const;
   
-  int GetEntityType() const;
-  void SetEntityType(int entityType);
+  int GetId() const;
+
+  std::string GetName() const;
+  void SetName(const std::string& name);
+  
+  std::string GetType() const;
+  void SetType(const std::string& type);
   
   bool IsOfType(const luabind::object& script) const;
   
@@ -32,6 +40,12 @@ public:
   
   Vector2d GetHeading() const;
   void SetHeading(const Vector2d& heading);
+  
+  double GetMass() const;
+  void SetMass(double mass);
+
+  double GetMaxSpeed() const;
+  void SetMaxSpeed(double maxSpeed);
   
   bool IsCollidable() const;
   void SetIsCollidadable(bool isCollidable);
@@ -55,8 +69,10 @@ public:
   void ChangeCurrentState(const luabind::object& state);  
   void SetCurrentState(const luabind::object& state);
   
-  void SetScript(const luabind::object& script);
   luabind::object& GetScript();
+  void SetScript(const luabind::object& script);
+  
+  void Initialize();
   
   static void RegisterWithLua(lua_State* L);
   
@@ -64,9 +80,11 @@ private:
   static int _nextId;
   
   Application* _application;
-  
+  SteeringBehaviors* _steeringBehaviors;
+
   int _id;
-  int _entityType;
+  std::string _name;
+  std::string _type;
   bool _isActive;
   
   ScriptedStateMachine<Entity>* _stateMachine;
@@ -74,6 +92,8 @@ private:
   Vector2d _position;
   Vector2d _velocity;
   Vector2d _heading;
+  double _mass;
+  double _maxSpeed;
   bool _isCollidable;
   double _boundingRadius;
   

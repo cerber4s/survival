@@ -184,7 +184,7 @@ ALLEGRO_COLOR RenderSystem::ColorToAllegroColor(const Color& color)
 
 void RenderSystem::RegisterWithLua(lua_State* L)
 {
-  luabind::module(L)
+  luabind::module(L, "survival")
   [
     luabind::class_<RenderSystem>("RenderSystem")
       .def("draw_circle", (void(RenderSystem::*)(int, int, int, const Color&, float)) &RenderSystem::DrawCircle)

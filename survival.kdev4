@@ -1,4 +1,4 @@
 [Project]
-Name=survival
 Manager=KDevCMakeManager
+Name=git-survival
 VersionControl=

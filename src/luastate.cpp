@@ -9,6 +9,7 @@
 #include "entity.h"
 #include "matrix3.h"
 #include "rendersystem.h"
+#include "steeringbehaviors.h"
 #include "vector2d.h"
 
 LuaState::LuaState()
@@ -48,5 +49,6 @@ void LuaState::RegisterClasses(lua_State* L)
   Entity::RegisterWithLua(L);
   Matrix3::RegisterWithLua(L);
   RenderSystem::RegisterWithLua(L);
+  SteeringBehaviors::RegisterWithLua(L);
   Vector2d::RegisterWithLua(L);
 }

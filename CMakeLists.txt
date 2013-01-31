@@ -16,6 +16,7 @@ add_executable(survival
   src/main
   src/matrix3
   src/rendersystem
+  src/steeringbehaviors
   src/vector2d
   )
 

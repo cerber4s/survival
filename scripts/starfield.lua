@@ -42,7 +42,7 @@ function Starfield:render(context, gfx)
     local t = m3.create_translation(context.viewport_translate * -2.0 * (1.0 - star.depth))
     local p = t * star.position
     
-    if (gfx:is_in_viewport(p)) then        
+    if (gfx:is_in_viewport(p)) then
       local alpha = (1.0 / star.max_pulse) * star.current_pulse
       local y = math.sin(math.pi * alpha)
       

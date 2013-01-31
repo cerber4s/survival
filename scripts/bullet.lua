@@ -3,14 +3,17 @@ require "scripts/bullet_state_default"
 require "scripts/bullet_state_destroy"
 
 Bullet = Entity:new {
-  initial_entity_type = 2,
-  initial_ttl = 60,
-  ttl = 60,
+  type = "bullet",
+  initial_ttl = 30,
+  ttl = 30,
   is_destroyed = false,
 }
   
 function Bullet:initialize (bullet)
-  bullet.entity_type = self.initial_entity_type
+  Entity:initialize(bullet)
+  
+  bullet.name = string.format("bullet-%d", bullet.id)
+  bullet.type = self.type
   bullet.is_active = true
   bullet.is_collidable = true
   bullet.bounding_radius = 2
@@ -47,9 +50,11 @@ function Bullet:handle_collision_with (bullet, other)
   if (other:is_of_type(Player)) then
     other:handle_collision_with(bullet)
   end
+  
   if (other:is_of_type(Entity)) then
     other:handle_collision_with(bullet)
   end
+  
   if (other:is_of_type(Bullet)) then
     bullet:change_current_state(bullet_state_destroy)
     other:change_current_state(bullet_state_destroy)

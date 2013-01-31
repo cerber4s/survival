@@ -3,7 +3,7 @@ require "scripts/entity_state_idle"
 require "scripts/entity_state_destroy"
 
 Entity = { 
-  initial_entity_type = 1,
+  type = "entity",
   is_destroyed = false,
 }
 
@@ -15,7 +15,8 @@ function Entity:new (o)
 end
 
 function Entity:initialize (entity)
-  entity.entity_type = self.initial_entity_type
+  entity.name = string.format("entity-%d", entity.id)
+  entity.type = self.type
   entity.is_active = true
   entity.is_collidable = true
   
