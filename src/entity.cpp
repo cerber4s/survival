@@ -168,7 +168,7 @@ void Entity::Render(RenderSystem* renderSystem)
     }
     catch (const luabind::error& e)
     {
-      std::cout << "error in Entity::Render" << std::endl;
+      std::cout << "error in Entity::Render: " << e.what() << std::endl;
       throw;
     } 
   }

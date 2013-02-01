@@ -59,9 +59,9 @@ Application::Application() :
   
   int entityPoolSize = 1024 * 16;
   _entityPool = std::vector<Entity*>(entityPoolSize);
-  for (int i = 0; i < (int)_entityPool.size(); i++)
+  for (int i = (int)_entityPool.size() - 1; i >= 0; i--)
   {
-    _entityPool[entityPoolSize - i] = new Entity(this);
+    _entityPool[i] = new Entity(this);
   }
   
   CalculateViewportTransformations();
@@ -148,16 +148,7 @@ bool Application::Initialize()
     std::cout << "application script is invalid" << std::endl;
     return false;
   }
-  
-  /*
-  _steeringBehaviorsScript = _script["steering_behaviors"];
-  if (!_steeringBehaviorsScript.is_valid())
-  {
-    std::cout << "steering behaviors script is invalid" << std::endl;
-    return false;
-  }
-  */
-  
+
   luabind::call_function<void>(_applicationScript["initialize"], _applicationScript, this);
   
   return true;
