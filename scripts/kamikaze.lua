@@ -16,7 +16,7 @@ function Kamikaze:initialize (kamikaze)
   kamikaze.type = self.type
   kamikaze.is_active = true
   
-  kamikaze.max_speed = 2.5
+  kamikaze.max_speed = 1.0
   
   kamikaze.is_collidable = true
   kamikaze.bounding_radius = 10
@@ -37,8 +37,19 @@ function Kamikaze:initialize (kamikaze)
 end
 
 function Kamikaze:handle_collision_with (kamikaze, other)
+  if (other:is_of_type(Player)) then
+    kamikaze.is_active = false
+    
+    other.script.current_ttl = math.max(0, other.script.current_ttl - (60.0 * 15))
+    return
+  end
+  
   if (other:is_of_type(Bullet)) then
     kamikaze.is_active = false
+    
+    local player = kamikaze.application:get_entity_by_name("player")
+    player.script.current_ttl = math.min(player.script.current_ttl + (60.0 * 15), player.script.max_ttl)
+    
     --kamikaze:change_current_state(entity_state_destroy)
     other:change_current_state(bullet_state_destroy)
   end

@@ -18,6 +18,9 @@ function Player:initialize (player)
   player.is_collidable = true
   player.bounding_radius = 10
   
+  player.script.max_ttl = 60.0 * (60.0 * 3.0)
+  player.script.current_ttl = 60.0 * (60.0 * 1.0)
+  
   player:change_global_state(entity_state_global)
   player:change_current_state(player_state_default)
 end
@@ -33,8 +36,14 @@ end
 ]]
 
 function Player:handle_collision_with (player, other)
+  if (other:is_of_type(Kamikaze)) then
+    other:handle_collision_with(player)
+    return
+  end
+  
   if (other:is_of_type(Bullet)) then
     -- todo: dmg player
     other:change_current_state(bullet_state_destroy)
+    return
   end
 end

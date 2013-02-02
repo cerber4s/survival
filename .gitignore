@@ -5,6 +5,7 @@ build/
 CMakeFiles/
 debug/
 ipch/
+minsizerel/
 release/
 relwithdebinfo/
 survival.dir/

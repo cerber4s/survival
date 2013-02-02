@@ -91,17 +91,33 @@ function create_application()
     end
     
     local player = context:get_entity_by_name("player")
-    player:render(gfx)
+    if not (player == nil) then
+      player:render(gfx)
+    end
     
     for entity in context:get_entities_by_type("bullet") do
       entity:render(gfx)
     end
     
     local radar = context:get_entity_by_name("radar")
-    radar:render(gfx)
+    if not (radar == nil) then
+      radar:render(gfx)
+    end
     
     local crosshair = context:get_entity_by_name("crosshair")
-    crosshair:render(gfx)
+    if not (crosshair == nil) then
+      crosshair:render(gfx)
+    end
+    
+    local count = 0
+    for entity in context.entities do
+      count = count + 1
+    end
+    
+    if (count == 0) then
+      gfx:draw_text(400, 300, color(255, 32, 32), "game over")
+    end
+    
   end
   
   return application

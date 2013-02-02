@@ -4,11 +4,11 @@ require "scripts/bullet_state_destroy"
 
 Bullet = Entity:new {
   type = "bullet",
-  initial_ttl = 30,
-  ttl = 30,
+  initial_ttl = 60,
+  ttl = 60,
   is_destroyed = false,
 }
-  
+
 function Bullet:initialize (bullet)
   Entity:initialize(bullet)
   
@@ -17,7 +17,7 @@ function Bullet:initialize (bullet)
   bullet.is_active = true
   bullet.is_collidable = true
   bullet.bounding_radius = 2
-
+  
   bullet:change_global_state(entity_state_global)
   bullet:change_current_state(bullet_state_default)
 end

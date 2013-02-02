@@ -29,9 +29,10 @@ function create_kamikaze_state_move()
     
     local force = kamikaze.steering_behaviors:calculate()
 
-    kamikaze.heading = force:normal()
-    kamikaze.velocity = force:normal() * 0.3
+    kamikaze.velocity = (kamikaze.velocity + force):truncate(kamikaze.max_speed)   
+    
     kamikaze.position = kamikaze.position + kamikaze.velocity
+    kamikaze.heading = kamikaze.velocity:normal()
     
     local delta = (player.position - kamikaze.position)
     local distance_to = delta:length_sqr()
