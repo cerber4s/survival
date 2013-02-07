@@ -8,9 +8,6 @@ function create_tower_state_idle()
       local p = tower.application.viewport_transformation * tower.position
 
       if (gfx:is_in_viewport(p)) then
-        gfx:draw_filled_circle(p, tower.script.kamikaze_spawn_radius, color(128, 128, 128, 0.05))
-        gfx:draw_filled_circle(p, tower.script.kamikaze_spawn_radius - 2, color(32, 32, 32, 0.05))
-        
         gfx:draw_filled_circle(p, tower.bounding_radius, color(128, 128, 128))
         gfx:draw_filled_circle(p, tower.bounding_radius - 2, color(32, 32, 32))
       end

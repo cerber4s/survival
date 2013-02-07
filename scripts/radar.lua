@@ -22,7 +22,7 @@ function Radar:render (radar, gfx)
   local radar_outer_radius = 75
   local radar_inner_radius = 40
   
-  local c = color(192, 192, 192)
+  local c = color(32, 192, 32, 0.1)
   
   gfx:draw_circle(radar.position, radar_outer_radius, c, 1)
   gfx:draw_circle(radar.position, radar_inner_radius, c, 1)

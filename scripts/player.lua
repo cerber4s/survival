@@ -19,7 +19,7 @@ function Player:initialize (player)
   player.bounding_radius = 10
   
   player.script.max_ttl = 60.0 * (60.0 * 3.0)
-  player.script.current_ttl = 60.0 * (60.0 * 1.0)
+  player.script.current_ttl = 360060.0 * (60.0 * 1.0)
   
   player:change_global_state(entity_state_global)
   player:change_current_state(player_state_default)
@@ -42,7 +42,7 @@ function Player:handle_collision_with (player, other)
   end
   
   if (other:is_of_type(Bullet)) then
-    -- todo: dmg player
+    player.script.current_ttl = math.max(0, player.script.current_ttl - (60.0 * 2.0))
     other:change_current_state(bullet_state_destroy)
     return
   end

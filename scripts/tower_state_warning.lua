@@ -11,9 +11,6 @@ function create_tower_state_warning()
       local p = tower.application.viewport_transformation * tower.position
 
       if (gfx:is_in_viewport(p)) then
-        gfx:draw_filled_circle(p, tower.script.kamikaze_spawn_radius, color(128, 128, 128, 0.05))
-        gfx:draw_filled_circle(p, tower.script.kamikaze_spawn_radius - 2, color(32, 32, 32, 0.05))
-        
         local alpha = (1.0 / tower.script.state_warning.max_tick) * tower.script.state_warning.tick
         
         gfx:draw_filled_circle(p, tower.bounding_radius, color(128 + (128 * alpha), 128 + (-128 * alpha), 128 + (-128 * alpha)))

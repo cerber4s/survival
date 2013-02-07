@@ -3,6 +3,8 @@
 #include <luabind/luabind.hpp>
 #include <luabind/operator.hpp>
 
+#include "matrix3.h"
+
 #include "common.h"
 
 bool Vector2d::IsZero() const
@@ -68,18 +70,25 @@ double Vector2d::DistanceToSqr(const Vector2d& other)
     return (delta_y*delta_y) + (delta_x*delta_x);
 }
 
+double Vector2d::Angle()
+{
+  return std::atan2(y, x);
+}
+
 double Vector2d::AngleInDegrees()
 {
   double radians = std::atan2(y, x);
   return RadiansToDegrees(radians);
 }
 
+Vector2d Vector2d::Rotate(double angleInRadians)
+{
+    return Matrix3::CreateRotation(angleInRadians) * (*this);
+}
+
 Vector2d Vector2d::RotateByDegrees(double degrees)
 {
-  double tx = (x * std::cos(degrees)) - (y * std::sin(degrees));
-  double ty = (y * std::cos(degrees)) + (x * std::sin(degrees));
-  
-  return Vector2d(tx, ty);
+    return Rotate(DegreesToRadians(degrees));
 }
 
 void Vector2d::RegisterWithLua(lua_State* L)
@@ -100,7 +109,9 @@ void Vector2d::RegisterWithLua(lua_State* L)
       .def("truncate", &Vector2d::Truncate)
       .def("distance_to", &Vector2d::DistanceTo)
       .def("distance_to_sqr", &Vector2d::DistanceToSqr)
+      .def("rotate", &Vector2d::Rotate)
       .def("rotate_by_degrees", &Vector2d::RotateByDegrees)
+      .def("angle", &Vector2d::Angle)
       .def("angle_in_degrees", &Vector2d::AngleInDegrees)
       .property("x", &Vector2d::x, &Vector2d::x)
       .property("y", &Vector2d::y, &Vector2d::y)

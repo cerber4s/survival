@@ -39,7 +39,7 @@ function create_player_state_default()
       
       gfx:draw_line(p, p + player.heading * 15, color(64, 192, 64), 2)
       
-      gfx:draw_text(p + v2(0, 20), color(128, 128, 0), string.format("%d", (1.0 / 60.0 * player.script.current_ttl)))
+      --gfx:draw_text(p + v2(0, 20), color(128, 128, 0), string.format("%d", (1.0 / 60.0 * player.script.current_ttl)))
     end
   end
 
@@ -69,22 +69,31 @@ function create_player_state_default()
     end
     
     local bullet_range = 300.0
-    local bullet_initial_ttl = 60.0 * 0.5
+    local bullet_initial_ttl = 60.0 * 2.0
     local bullet_spawn_distance = 17
     
-    local bullets_per_second = 4 
+    local bullets_per_second = 3200
       
     local fire = (player.application.is_button_primary_pressed or player.application.is_left_mouse_button_pressed)
     if (player.script.state_default.fire_delay == 0 and fire) then
-      bullet = player.application:spawn_entity(Bullet:new())
+      local bullet = player.application:spawn_entity(Bullet:new())
+	  
+	  bullet.position = player.position + player.heading * 20
+      bullet.velocity = player.heading:normal() * 8.0
+      bullet.heading = player.heading
+      
+      bullet.script.initial_ttl = bullet_initial_ttl
+      bullet.script.ttl = bullet_initial_ttl
+      
+	  --[[
       bullet.position = player.position + player.heading * bullet_spawn_distance
       bullet.velocity = player.heading:normal() * (1.0 / bullet_initial_ttl * (bullet_range - bullet_spawn_distance))
       bullet.heading = player.heading
       
       bullet.script.initial_ttl = bullet_initial_ttl
       bullet.script.ttl = bullet_initial_ttl
-      
-      player.script.state_default.fire_delay = 60.0 / bullets_per_second
+      ]]
+      player.script.state_default.fire_delay = math.floor(60.0 / bullets_per_second)
     end
 
     player.velocity = player.velocity:truncate(player.max_speed)

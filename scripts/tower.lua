@@ -27,7 +27,6 @@ end
 
 function Tower:handle_collision_with (tower, other)
   if (other:is_of_type(Bullet)) then
-    --bullet:change_current_state(bullet_state_destroy)
     other:change_current_state(bullet_state_destroy)
   end
 end

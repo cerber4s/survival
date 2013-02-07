@@ -28,11 +28,13 @@ public:
   double DistanceTo(const Vector2d& other);
   double DistanceToSqr(const Vector2d& other);
   
+  double Angle();
   double AngleInDegrees();
-  
+
+  inline Vector2d Rotate(double angleInRadians);
   inline Vector2d RotateByDegrees(double degrees);
   
-  const Vector2d& operator+=(const Vector2d &rhs)
+  const Vector2d& operator+=(const Vector2d& rhs)
   {
     x += rhs.x;
     y += rhs.y;
@@ -40,12 +42,27 @@ public:
     return *this;
   }
   
+  Vector2d operator+(const Vector2d& rhs)
+  {
+    return Vector2d(x + rhs.x, y + rhs.y);
+  }
+
   const Vector2d& operator-=(const Vector2d &rhs)
   {
     x -= rhs.x;
     y -= rhs.y;
     
     return *this;
+  }
+  
+  Vector2d operator-(const Vector2d& rhs)
+  {
+    return Vector2d(x - rhs.x, y - rhs.y);
+  }
+
+  Vector2d operator*(double rhs)
+  {
+    return Vector2d(x * rhs, y * rhs);
   }
 
   static void RegisterWithLua(lua_State* L);

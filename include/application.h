@@ -14,6 +14,7 @@
 #include "luastate.h"
 
 #include "buttons.h"
+#include "collisionmanager.h"
 #include "matrix3.h"
 #include "types.h"
 #include "vector2d.h"
@@ -40,9 +41,6 @@ public:
   const std::vector<Entity*>& GetEntities() const { return _entities; }
   
   const std::set<Entity*>& GetEntitiesByType(const std::string& type);
-  
-  //luabind::object& GetApplicationScript() const { return _applicationScript; }
-  //luabind::object& GetSteeringBehaviorsScript() const { return _steeringBehaviorsScript; }
   
   bool IsButtonUpPressed() const { return IsButtonPressed(ButtonUp); }
   bool IsButtonDownPressed() const { return IsButtonPressed(ButtonDown); }
@@ -83,8 +81,9 @@ private:
   std::unique_ptr<LuaState> _luaState;
   luabind::object _script;  
   luabind::object _applicationScript;
-  //luabind::object _steeringBehaviorsScript;
   
+  CollisionManager<Entity*> _collisionManager;
+
   Vector2d _viewportTranslate;
   Matrix3 _viewportTransformation;
   Matrix3 _viewportInverseTransformation;
@@ -112,6 +111,8 @@ private:
   bool _keyStates[ALLEGRO_KEY_MAX];
   bool _previousKeyStates[ALLEGRO_KEY_MAX];
   
+  Application::Application(const Application& other);
+
   void CalculateViewportTransformations();
 
   bool Update();
@@ -126,6 +127,8 @@ private:
   
   void HandleCollisions();
   
+  void EnsureEntityNameIsNotRegistered(const std::string& name);
+
 };
 
 #endif // APPLICATION_H

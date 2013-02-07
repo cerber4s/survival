@@ -6,10 +6,6 @@ function create_kamikaze_state_move()
       local p = kamikaze.application.viewport_transformation * kamikaze.position
       
       if (gfx:is_in_viewport(p)) then
-        
-        gfx:draw_filled_circle(p, kamikaze.script.view_distance, color(128, 128, 128, 0.05))
-        gfx:draw_filled_circle(p, kamikaze.script.view_distance - 2, color(32, 32, 32, 0.05))
-        
         gfx:draw_filled_circle(p, kamikaze.bounding_radius, color(192, 0, 0))
         gfx:draw_filled_circle(p, kamikaze.bounding_radius - 2, color(96, 0, 0))
         

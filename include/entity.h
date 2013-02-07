@@ -99,6 +99,8 @@ private:
   
   luabind::object _script;
   
+  Entity(const Entity& other);
+
 };
 
 #endif // ENTITY_H

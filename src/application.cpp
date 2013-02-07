@@ -18,37 +18,12 @@
 #include "entity.h"
 #include "random.h"
 
-#include <sstream>
-#include <iostream>
-
-int add_file_and_line(lua_State* L)
-{
-  lua_Debug d;
-  lua_getstack(L, 1, &d);
-  lua_getinfo(L, "Sln", &d);
-  std::string err = lua_tostring(L, -1);
-  lua_pop(L, 1);
-  std::stringstream msg;
-  msg << d.short_src << ":" << d.currentline;
-
-  if (d.name != 0)
-  {
-    msg << "(" << d.namewhat << " " << d.name << ")";
-  }
-  msg << " " << err;
-
-  std::cout << msg.str() << std::endl;
-  lua_pushstring(L, msg.str().c_str());
-return 1;
-}
-
 Application::Application() :
   _renderSystem(nullptr),
   _eventQueue(nullptr),
-  _luaState(new LuaState())
+  _luaState(new LuaState()),
+  _collisionManager(4)
 {
-  luabind::set_pcall_callback(add_file_and_line);
-  
   _luaState->RunScript("scripts/application.lua");
   
   _script = luabind::globals(_luaState->GetLuaState());
@@ -102,7 +77,7 @@ bool Application::Initialize()
 
   if(!al_init()) 
   {
-    std::cout << "failed to initialize allegro!" << std::endl;
+    std::cout << "failed to initialize allegro" << std::endl;
     return false;
   }
   
@@ -117,13 +92,13 @@ bool Application::Initialize()
   
   if (!al_install_keyboard())
   {
-    std::cout << "failed to install keyboard!" << std::endl;
+    std::cout << "failed to install keyboard" << std::endl;
     return false;
   }
  
   if (!al_install_mouse())
   {
-    std::cout << "failed to install mouse!" << std::endl;
+    std::cout << "failed to install mouse" << std::endl;
     return false;
   }
  
@@ -134,7 +109,7 @@ bool Application::Initialize()
   _eventQueue = al_create_event_queue();
   if (!_eventQueue)
   {
-    std::cout << "failed to create event queue!" << std::endl;
+    std::cout << "failed to create event queue" << std::endl;
     return false;
   }
  
@@ -235,15 +210,11 @@ Entity* Application::SpawnEntity(const luabind::object& script)
   Entity* entity = _entityPool.back();
   entity->SetScript(script);
   entity->Initialize();
+
+  EnsureEntityNameIsNotRegistered(entity->GetName());
   
   _entityPool.pop_back();
   _spawnedEntities.push_back(entity);
-  
-  std::map<std::string, Entity*>::const_iterator name_iter = _entityNamesMap.find(entity->GetName());
-  if (name_iter != _entityNamesMap.end())
-  {
-    throw std::runtime_error((boost::format("entity name '%s' (type: '%s')is already registered") % entity->GetName() % entity->GetType()).str());
-  }
   
   _entityNamesMap[entity->GetName()] = entity;
 
@@ -252,13 +223,14 @@ Entity* Application::SpawnEntity(const luabind::object& script)
   {
     _entityTypesMap[entity->GetType()] = std::set<Entity*>();
     _entityTypesMap[entity->GetType()].insert(entity);
-    //.push_back(entity);
   }
   else
   {
     (*i).second.insert(entity);
   }
   
+  _collisionManager.Add(entity);
+
   return entity;
 }
 
@@ -278,25 +250,15 @@ Entity* Application::GetEntityById(int entityId)
 Entity* Application::GetEntityByName(const std::string& name)
 {
   std::map<std::string, Entity*>::const_iterator i = _entityNamesMap.find(name);  
-  
-  Entity* entity = nullptr;
-  if (i != _entityNamesMap.end())
-  {
-    entity = (*i).second;
-  }
-  
-  return entity;
+  return (i != _entityNamesMap.end()) ? (*i).second : nullptr;
 }
 
 const std::set<Entity*>& Application::GetEntitiesByType(const std::string& type)
 {
   static std::set<Entity*> emptyResult;
+
   std::map<std::string, std::set<Entity*>>::const_iterator i = _entityTypesMap.find(type);
-  if (i != _entityTypesMap.end())
-  {
-    return (*i).second;
-  }
-  return emptyResult;
+  return (i != _entityTypesMap.end()) ? (*i).second : emptyResult;
 }
 
 void Application::CalculateViewportTransformations()
@@ -329,7 +291,10 @@ bool Application::Update()
   
   BOOST_FOREACH(Entity* entity, _entities)
   {
+    Vector2d previousPosition = entity->GetPosition();
+
     entity->Update(1.0);
+    _collisionManager.Update(entity, previousPosition);
   }
 
   ClearInactiveEntities();
@@ -343,6 +308,23 @@ bool Application::Update()
   return true;
 }
 
+void debug_collision_manager(int depth, const Matrix3& vt, Cell<Entity*>* cell, RenderSystem* gfx)
+{
+  
+  gfx->DrawRectangle(vt * cell->_boundingBox.GetTopLeft(), vt * cell->_boundingBox.GetBottomRight(), Color(255, 0, 0), 1);
+  gfx->DrawText(vt * cell->_boundingBox.GetTopLeft() + Vector2d(2, 2), Color(255, 0, 0), (boost::format("%d") % cell->_entities.size()).str());
+  
+  if (depth > 0 && cell->_subCells != nullptr)
+  {
+    for (int i = 0; i< 4; i++)
+    {
+      debug_collision_manager(depth - 1, vt, cell->_subCells[i], gfx);
+    }
+  }
+  //gfx->DrawRectangle(cell->GetTopLeft(), cell->GetBottomRight(), Color(255, 0, 0), 3);
+
+}
+
 void Application::Render()
 {
   al_wait_for_vsync();
@@ -350,25 +332,10 @@ void Application::Render()
  
   al_set_blender(ALLEGRO_ADD, ALLEGRO_ALPHA, ALLEGRO_INVERSE_ALPHA);
  
-  luabind::call_function<void>(_applicationScript["render"], _applicationScript, this, _renderSystem);
+  luabind::call_function<void>(_applicationScript["render"], _applicationScript, this, _renderSystem);  
   
-  /*
-  BOOST_FOREACH(Entity* entity, _entities)
-  {
-    if (entity->IsActive())
-    {
-      entity->Render(_renderSystem);
-    }
-  }
+  debug_collision_manager(512, GetViewportTransformation(), _collisionManager._root.get(), _renderSystem);
 
-  _renderSystem->DrawText(10, 10, Color(255, 32, 32), (boost::format("entity count: %d") % _entities.size()).str());
-
-  for(int i = 0; i < ButtonMax; i++)
-  {
-    _renderSystem->DrawText(10, 22 + (i * 12), Color(255, 32, 32, 0.5f), (boost::format("%s") % (IsButtonPressed((Buttons)i) ? "x" : "-")).str());
-  }
-  */
-  
   al_flip_display();
 }
   
@@ -465,7 +432,6 @@ void Application::ClearInactiveEntities()
       std::map<std::string, std::set<Entity*>>::iterator i2 = _entityTypesMap.find(entity->GetType());
       if (i2 != _entityTypesMap.end())
       {
-        //(*i2).second.erase(std::find((*i2).second.begin(), (*i2).second.end(), entity));
         (*i2).second.erase(entity);
       }    
       else
@@ -473,6 +439,8 @@ void Application::ClearInactiveEntities()
         throw std::runtime_error((boost::format("type '%s' not found in entity types map") % entity->GetType()).str());
       }
       
+      _collisionManager.Remove(entity);
+
       i = _entities.erase(i);
     }
     else
@@ -484,19 +452,7 @@ void Application::ClearInactiveEntities()
 
 void Application::HandleCollisions()
 {
-  for (size_t i = 0; i < _entities.size(); i++)
-  {
-    for (size_t j = i + 1; j < _entities.size(); j++)
-    {
-      Entity* left = _entities[i];
-      Entity* right = _entities[j];
-      
-      if (left->IsCollidable() && right->IsCollidable() && left->HasCollidedWith(right))
-      {
-        left->HandleCollisionWith(right);
-      }
-    }
-  }
+  _collisionManager.HandleCollisions();
 }
 
 bool Application::IsButtonPressed(const Buttons& button) const
@@ -549,6 +505,15 @@ Matrix3 Application::GetViewportTransformation() const
 Matrix3 Application::GetViewportInverseTransformation() const
 {
   return _viewportInverseTransformation;
+}
+
+void Application::EnsureEntityNameIsNotRegistered(const std::string& name)
+{
+  Entity* entity = GetEntityByName(name);
+  if (entity != nullptr)
+  {
+    throw std::runtime_error((boost::format("entity name '%s' is already registered") % name).str());
+  }
 }
 
 void Application::RegisterWithLua(lua_State* L)

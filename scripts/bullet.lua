@@ -28,6 +28,7 @@ function Bullet:render (bullet, gfx)
     local alpha = (1.0 / bullet.script.initial_ttl) * bullet.script.ttl
     
     if (bullet.script.is_destroyed) then
+		--[[
       local spread = 1 + math.exp(alpha);
       for i = 1, 4 do
         local d = v2(-1 + math.random() * 2, -1 + math.random() * 2):normal()
@@ -36,6 +37,7 @@ function Bullet:render (bullet, gfx)
         gfx:draw_line(p, p + n, color(255, 0 + (32 * alpha), 92 - (64 * alpha), alpha), t)
         gfx:draw_line(p + n, p + (d * (spread + 3)), color(192, 0 + (32 * alpha), 92 - (64 * alpha), 0.5 * alpha), t)
       end
+	  ]]
       return
     end
     
@@ -47,16 +49,11 @@ function Bullet:render (bullet, gfx)
 end
 
 function Bullet:handle_collision_with (bullet, other)
-  if (other:is_of_type(Player)) then
-    other:handle_collision_with(bullet)
-  end
-  
-  if (other:is_of_type(Entity)) then
-    other:handle_collision_with(bullet)
-  end
-  
   if (other:is_of_type(Bullet)) then
     bullet:change_current_state(bullet_state_destroy)
     other:change_current_state(bullet_state_destroy)
+	return
   end
+  
+  other:handle_collision_with(bullet)
 end
