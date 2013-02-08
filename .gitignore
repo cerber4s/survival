@@ -10,6 +10,7 @@ release/
 relwithdebinfo/
 survival.dir/
 Win32/
+Testing/
 
 #files
 *.cmake

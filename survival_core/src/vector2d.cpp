@@ -86,9 +86,9 @@ Vector2d Vector2d::Rotate(double angleInRadians)
     return Matrix3::CreateRotation(angleInRadians) * (*this);
 }
 
-Vector2d Vector2d::RotateByDegrees(double degrees)
+Vector2d Vector2d::RotateByDegrees(double angleInDegrees)
 {
-    return Rotate(DegreesToRadians(degrees));
+    return Rotate(DegreesToRadians(angleInDegrees));
 }
 
 void Vector2d::RegisterWithLua(lua_State* L)

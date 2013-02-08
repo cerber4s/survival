@@ -1,6 +1,8 @@
 #ifndef VECTOR2D_H
 #define VECTOR2D_H
 
+#include <ostream>
+
 #include <lua.hpp>
 
 class Vector2d
@@ -27,14 +29,14 @@ public:
   
   double DistanceTo(const Vector2d& other);
   double DistanceToSqr(const Vector2d& other);
-  
+
   double Angle();
   double AngleInDegrees();
 
   inline Vector2d Rotate(double angleInRadians);
-  inline Vector2d RotateByDegrees(double degrees);
+  inline Vector2d RotateByDegrees(double angleInDegrees);
   
-  const Vector2d& operator+=(const Vector2d& rhs)
+  inline const Vector2d& operator+=(const Vector2d &rhs)
   {
     x += rhs.x;
     y += rhs.y;
@@ -42,27 +44,36 @@ public:
     return *this;
   }
   
-  Vector2d operator+(const Vector2d& rhs)
-  {
-    return Vector2d(x + rhs.x, y + rhs.y);
-  }
-
-  const Vector2d& operator-=(const Vector2d &rhs)
+  inline const Vector2d& operator-=(const Vector2d &rhs)
   {
     x -= rhs.x;
     y -= rhs.y;
     
     return *this;
   }
-  
-  Vector2d operator-(const Vector2d& rhs)
+
+  inline const Vector2d& operator*=(double rhs)
   {
-    return Vector2d(x - rhs.x, y - rhs.y);
+    x *= rhs;
+    y *= rhs;
+
+    return *this;
   }
 
-  Vector2d operator*(double rhs)
+  inline bool operator==(const Vector2d& rhs) const
   {
-    return Vector2d(x * rhs, y * rhs);
+    if (this == &rhs)
+      return true;
+
+    return (x == rhs.x && y == rhs.y);
+  }
+
+  inline bool operator!=(const Vector2d& rhs) const
+  {
+    if (this == &rhs)
+      return false;
+
+    return (x != rhs.x || y != rhs.y);
   }
 
   static void RegisterWithLua(lua_State* L);
@@ -82,6 +93,12 @@ inline Vector2d operator-(const Vector2d &lhs, const Vector2d &rhs)
 inline Vector2d operator*(const Vector2d &lhs, double rhs)
 {
   return Vector2d(lhs.x * rhs, lhs.y * rhs);
+}
+
+inline std::ostream& operator<<(std::ostream& out, const Vector2d& rhs) 
+{
+  out << "[" << rhs.x << ", " << rhs.y << "]" << std::endl;
+  return out;
 }
 
 #endif //VECTOR2D_H

@@ -1,6 +1,13 @@
 #ifndef APPLICATION_H
 #define APPLICATION_H
 
+#include "buttons.h"
+#include "collisionmanager.h"
+#include "luastate.h"
+#include "matrix3.h"
+#include "types.h"
+#include "vector2d.h"
+
 #include <allegro5/allegro.h>
 
 #include <lua.hpp>
@@ -10,14 +17,6 @@
 #include <memory>
 #include <set>
 #include <vector>
-
-#include "luastate.h"
-
-#include "buttons.h"
-#include "collisionmanager.h"
-#include "matrix3.h"
-#include "types.h"
-#include "vector2d.h"
 
 class Entity;
 class RenderSystem;
@@ -82,7 +81,7 @@ private:
   luabind::object _script;  
   luabind::object _applicationScript;
   
-  CollisionManager<Entity*> _collisionManager;
+  CollisionManager _collisionManager;
 
   Vector2d _viewportTranslate;
   Matrix3 _viewportTransformation;
@@ -111,7 +110,7 @@ private:
   bool _keyStates[ALLEGRO_KEY_MAX];
   bool _previousKeyStates[ALLEGRO_KEY_MAX];
   
-  Application::Application(const Application& other);
+  Application(const Application& other);
 
   void CalculateViewportTransformations();
 

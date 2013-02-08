@@ -3,7 +3,7 @@
 BoundingBox::BoundingBox(const Vector2d& topLeft, const Vector2d& bottomRight) : 
   _topLeft(topLeft), 
   _bottomRight(bottomRight),
-  _size((bottomRight - topLeft) * 0.5),
+  _size((bottomRight - topLeft)),
   _center((topLeft + bottomRight) * 0.5)
 {
 }

@@ -1,30 +1,76 @@
-project(survival) 
-
-set(SURVIVAL_VERSION 0.1.0)
-
 cmake_minimum_required(VERSION 2.8)
+project(survival)
 
-IF(WIN32)
-	add_definitions(-DLUABIND_DYNAMIC_LINK)
-ELSE()
-	add_definitions(-Wall -std=c++0x -O0 -g)
-ENDIF()
+set(SURVIVAL_VERSION_MAJOR 0)
+set(SURVIVAL_VERSION_MINOR 1)
+set(SURVIVAL_VERSION_PATCH 0)
+set(SURVIVAL_VERSION_TWEAK 0-dev)
 
-include_directories(include $ENV{BOOST_ROOT} $ENV{LUA_INCLUDE} $ENV{LUABIND_INCLUDE} $ENV{ALLEGRO_INCLUDE})
+# 3rd party libraries
+#set(Boost_USE_STATIC_LIBS ON)
+#find_package(Boost COMPONENTS unit_test_framework REQUIRED)
+find_package(Boost REQUIRED)
 
-link_directories($ENV{LUA_LIB} $ENV{LUABIND_LIB} $ENV{ALLEGRO_LIB})
+set(Lua_INCLUDE_DIR d:/projects/kevin/libs/lua-5.1.4-bin/include)
+set(Lua_LIBRARY_DIRS d:/projects/kevin/libs/lua-5.1.4-bin)
+set(Lua_DEBUG_LIBS lua5.1)
+set(Lua_OPTIMIZED_LIBS lua5.1)
 
-FILE(GLOB SOURCE src/*.cpp)
-FILE(GLOB HEADER include/*.h)
+set(Luabind_INCLUDE_DIR d:/projects/kevin/libs/luabind-0.9.1)
+set(Luabind_LIBRARY_DIRS d:/projects/kevin/libs/luabind-0.9.1/libs)
+set(Luabind_DEBUG_LIBS luabindd)
+set(Luabind_OPTIMIZED_LIBS luabind)
+add_definitions(-DLUABIND_DYNAMIC_LINK)
 
-add_executable(survival ${SOURCE} ${HEADER})
+set(Allegro_INCLUDE_DIR d:/projects/kevin/libs/allegro-5.0.8-msvc-10.0/include)
+set(Allegro_LIBRARY_DIRS d:/projects/kevin/libs/allegro-5.0.8-msvc-10.0/lib)
+set(Allegro_DEBUG_LIBS allegro-5.0.8-monolith-md-debug)
+set(Allegro_OPTIMIZED_LIBS allegro-5.0.8-monolith-md)
 
-if (WIN32)
-	target_link_libraries(survival lua5.1 
-		debug allegro-5.0.8-monolith-md-debug
-		debug luabindd
-		optimized allegro-5.0.8-monolith-md
-		optimized luabind)
-ELSE()
-	target_link_libraries(survival allegro allegro_image allegro_primitives allegro_font allegro_ttf lua luabind dl)
-ENDIF()
+# project settings
+set(SURVIVAL_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
+set(SURVIVAL_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
+
+file(GLOB SURVIVAL_HEADER_FILES ${SURVIVAL_INCLUDE_DIR}/*.h)
+file(GLOB SURVIVAL_SOURCE_FILES ${SURVIVAL_SRC_DIR}/*.cpp)
+
+#IF(WIN32)
+#	add_definitions(-DLUABIND_DYNAMIC_LINK)
+#ELSE()
+#	add_definitions(-Wall -std=c++0x -O0 -g)
+#ENDIF()
+
+set(SURVIVAL_CORE_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/survival_core/include)
+set(SURVIVAL_CORE_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/survival_core/src)
+
+set(SURVIVAL_CORE_TESTS_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/survival_core_tests/include)
+set(SURVIVAL_CORE_TESTS_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/survival_core_tests/src)
+
+include_directories( 
+    ${SURVIVAL_INCLUDE_DIR}
+    ${SURVIVAL_CORE_INCLUDE_DIR}
+    ${Boost_INCLUDE_DIR}
+    ${Lua_INCLUDE_DIR}
+    ${Luabind_INCLUDE_DIR}
+    ${Allegro_INCLUDE_DIR})
+
+link_directories(
+    ${Lua_LIBRARY_DIRS}
+    ${Luabind_LIBRARY_DIRS}
+    ${Allegro_LIBRARY_DIRS})
+
+add_subdirectory(survival_core) 
+add_subdirectory(survival_core_tests) 
+    
+add_executable(survival ${SURVIVAL_SOURCE_FILES} ${SURVIVAL_HEADER_FILES})
+target_link_libraries(survival
+    survival_core
+    debug ${Lua_DEBUG_LIBS}
+    debug ${Luabind_DEBUG_LIBS}
+    debug ${Allegro_DEBUG_LIBS}
+    optimized ${Lua_OPTIMIZED_LIBS} 
+    optimized ${Luabind_OPTIMIZED_LIBS}
+    optimized ${Allegro_OPTIMIZED_LIBS})
+    
+enable_testing()
+add_test(survival_core_tests survival_core_tests/survival_core_tests --log_level=all)

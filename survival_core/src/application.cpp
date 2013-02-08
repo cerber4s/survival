@@ -22,7 +22,7 @@ Application::Application() :
   _renderSystem(nullptr),
   _eventQueue(nullptr),
   _luaState(new LuaState()),
-  _collisionManager(4)
+  _collisionManager(1024 * 8)
 {
   _luaState->RunScript("scripts/application.lua");
   
@@ -307,8 +307,8 @@ bool Application::Update()
   
   return true;
 }
-
-void debug_collision_manager(int depth, const Matrix3& vt, Cell<Entity*>* cell, RenderSystem* gfx)
+/*
+void debug_collision_manager(int depth, const Matrix3& vt, Cell* cell, RenderSystem* gfx)
 {
   
   gfx->DrawRectangle(vt * cell->_boundingBox.GetTopLeft(), vt * cell->_boundingBox.GetBottomRight(), Color(255, 0, 0), 1);
@@ -324,7 +324,7 @@ void debug_collision_manager(int depth, const Matrix3& vt, Cell<Entity*>* cell, 
   //gfx->DrawRectangle(cell->GetTopLeft(), cell->GetBottomRight(), Color(255, 0, 0), 3);
 
 }
-
+*/
 void Application::Render()
 {
   al_wait_for_vsync();
@@ -334,7 +334,7 @@ void Application::Render()
  
   luabind::call_function<void>(_applicationScript["render"], _applicationScript, this, _renderSystem);  
   
-  debug_collision_manager(512, GetViewportTransformation(), _collisionManager._root.get(), _renderSystem);
+  //debug_collision_manager(512, GetViewportTransformation(), _collisionManager._root.get(), _renderSystem);
 
   al_flip_display();
 }
