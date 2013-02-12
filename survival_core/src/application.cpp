@@ -22,7 +22,7 @@ Application::Application() :
   _renderSystem(nullptr),
   _eventQueue(nullptr),
   _luaState(new LuaState()),
-  _collisionManager(1024 * 8)
+  _collisionManager(1024 * 32)
 {
   _luaState->RunScript("scripts/application.lua");
   
@@ -70,9 +70,7 @@ Application::~Application()
 }
 
 bool Application::Initialize()
-{
-  std::cout << "Initialize" << std::endl;
-  
+{ 
   Random::Initialize();
 
   if(!al_init()) 
@@ -124,15 +122,21 @@ bool Application::Initialize()
     return false;
   }
 
-  luabind::call_function<void>(_applicationScript["initialize"], _applicationScript, this);
-  
+  try
+  {
+    luabind::call_function<void>(_applicationScript["initialize"], _applicationScript, this);
+  }
+  catch (const std::exception& e)
+  {
+    std::cout << "error in function call to 'application:initialize': " << e.what() << std::endl;
+    throw;
+  }
+
   return true;
 }
 
 void Application::UnInitialize()
-{
-  std::cout << "UnInitialize" << std::endl;
-  
+{ 
   luabind::object invalidState;
   BOOST_FOREACH(Entity* entity, _entities)
   {
@@ -156,8 +160,6 @@ void Application::UnInitialize()
 
 void Application::Execute()
 {
-  std::cout << "Execute" << std::endl;  
-
   int refresh_rate = 60;
   float fixed_dt = 1.0f / refresh_rate;
   float old_time = al_get_time();
@@ -287,8 +289,16 @@ bool Application::Update()
     _spawnedEntities.clear();
   }
   
-  luabind::call_function<void>(_applicationScript["update"], _applicationScript, this, 1.0);
-  
+  try
+  {
+    luabind::call_function<void>(_applicationScript["update"], _applicationScript, this, 1.0);
+  }
+  catch (const std::exception& e)
+  {
+    std::cout << "error in function call to 'application:update': " << e.what() << std::endl;
+    throw;
+  }
+
   BOOST_FOREACH(Entity* entity, _entities)
   {
     Vector2d previousPosition = entity->GetPosition();
@@ -307,24 +317,7 @@ bool Application::Update()
   
   return true;
 }
-/*
-void debug_collision_manager(int depth, const Matrix3& vt, Cell* cell, RenderSystem* gfx)
-{
-  
-  gfx->DrawRectangle(vt * cell->_boundingBox.GetTopLeft(), vt * cell->_boundingBox.GetBottomRight(), Color(255, 0, 0), 1);
-  gfx->DrawText(vt * cell->_boundingBox.GetTopLeft() + Vector2d(2, 2), Color(255, 0, 0), (boost::format("%d") % cell->_entities.size()).str());
-  
-  if (depth > 0 && cell->_subCells != nullptr)
-  {
-    for (int i = 0; i< 4; i++)
-    {
-      debug_collision_manager(depth - 1, vt, cell->_subCells[i], gfx);
-    }
-  }
-  //gfx->DrawRectangle(cell->GetTopLeft(), cell->GetBottomRight(), Color(255, 0, 0), 3);
 
-}
-*/
 void Application::Render()
 {
   al_wait_for_vsync();
@@ -332,10 +325,16 @@ void Application::Render()
  
   al_set_blender(ALLEGRO_ADD, ALLEGRO_ALPHA, ALLEGRO_INVERSE_ALPHA);
  
-  luabind::call_function<void>(_applicationScript["render"], _applicationScript, this, _renderSystem);  
+  try
+  {
+    luabind::call_function<void>(_applicationScript["render"], _applicationScript, this, _renderSystem);  
+  }
+  catch (const std::exception& e)
+  {
+    std::cout << "error in function call to 'application:render': " << e.what() << std::endl;
+    throw;
+  }
   
-  //debug_collision_manager(512, GetViewportTransformation(), _collisionManager._root.get(), _renderSystem);
-
   al_flip_display();
 }
   

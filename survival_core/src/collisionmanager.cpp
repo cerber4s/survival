@@ -3,7 +3,7 @@
 #include "entity.h"
 
 CollisionManager::CollisionManager(int maxEntitiesPerCel) :
-  _root(new Cell(maxEntitiesPerCel, Vector2d(64 * -1024, 64 * -1024), Vector2d(64 * 1024, 64 * 1024)))
+  _root(new Cell(maxEntitiesPerCel, Vector2d(128 * -1024, 128 * -1024), Vector2d(128 * 1024, 128 * 1024)))
 {
 }
   
@@ -29,5 +29,5 @@ void CollisionManager::Clear()
 
 void CollisionManager::HandleCollisions()
 {
-  //_root->HandleCollisions();
+  _root->HandleCollisions();
 }

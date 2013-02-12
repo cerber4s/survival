@@ -39,9 +39,12 @@ bool RenderSystem::Initialize()
     return false;
   }
   
-  al_set_new_display_flags(ALLEGRO_WINDOWED); 
+  //int display_flags = ALLEGRO_WINDOWED;
+  int display_flags = ALLEGRO_FULLSCREEN;
+
+  al_set_new_display_flags(display_flags); 
   
-  _display = al_create_display(800, 600); 
+  _display = al_create_display(1280, 800); 
   if(!_display) 
   {
     std::cout << "failed to create display!" << std::endl;

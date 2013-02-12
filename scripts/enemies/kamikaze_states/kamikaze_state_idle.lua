@@ -1,5 +1,3 @@
-require "scripts/kamikaze_state_move"
-
 function create_kamikaze_state_idle()
   local kamikaze_state_idle = {}
 
@@ -21,16 +19,17 @@ function create_kamikaze_state_idle()
   function kamikaze_state_idle:execute(kamikaze)
     local player = kamikaze.application:get_entity_by_name("player")    
     local delta = (player.position - kamikaze.position)
-    local distance_to = delta:length_sqr()
+    local distance_to_sqr = delta:length_sqr()
     
-    if (distance_to < kamikaze.script.view_distance_sqr) then
+    if (distance_to_sqr < kamikaze.script.view_distance_sqr) then
       kamikaze.heading = delta:normal()
     else
       kamikaze.heading = v2()
     end
     
-    if (distance_to < kamikaze.script.activate_distance_sqr) then
+    if (distance_to_sqr < kamikaze.script.activate_distance_sqr) then
       kamikaze:change_current_state(kamikaze_state_move)
+	  return
     end
   end
 

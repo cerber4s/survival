@@ -46,7 +46,13 @@ public:
 
   double GetMaxSpeed() const;
   void SetMaxSpeed(double maxSpeed);
-  
+
+  double GetMaxForce() const;
+  void SetMaxForce(double maxForce);
+
+  double GetMaxTurnRate() const;
+  void SetMaxTurnRate(double maxTurnRate);
+
   bool IsCollidable() const;
   void SetIsCollidadable(bool isCollidable);
   
@@ -59,7 +65,10 @@ public:
   void Update(double deltaTime);
   
   void Render(RenderSystem* renderSystem);
-  
+
+  bool IsVisible() const;
+  void SetIsVisible(bool isVisible);
+
   bool HasCollidedWith(Entity* other);
   void HandleCollisionWith(Entity* other);
   
@@ -94,12 +103,18 @@ private:
   Vector2d _heading;
   double _mass;
   double _maxSpeed;
+  double _maxForce;
+  double _maxTurnRate;
   bool _isCollidable;
   double _boundingRadius;
   
+  bool _isVisible;
+
   luabind::object _script;
   
   Entity(const Entity& other);
+
+  void ReportCallFunctionException(const std::string& functionName, const std::exception& e);
 
 };
 

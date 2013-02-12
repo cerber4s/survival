@@ -9,19 +9,17 @@
 
 int add_file_and_line(lua_State* L);
 
-//#define SURVIVAL_OPTION_CATCH_EXCEPTION
+#define SURVIVAL_OPTION_CATCH_EXCEPTION
 
 int main(int argc, char **argv) 
 {
   luabind::set_pcall_callback(add_file_and_line);
 
-  std::unique_ptr<Application> application(new Application());      
-
-#ifdef SURVIVAL_OPTION_CATCH_EXCEPTION
+#ifdef SURVIVAL_OPTION_CATCH_EXCEPTION  
   try
   {
 #endif
-
+    std::unique_ptr<Application> application(new Application());
     if (application->Initialize())
     {
       application->Execute();  
@@ -30,10 +28,18 @@ int main(int argc, char **argv)
 
 #ifdef SURVIVAL_OPTION_CATCH_EXCEPTION
   }
-  catch (luabind::error e)
+  catch (const luabind::error& e)
   {
     luabind::object error_message(luabind::from_stack(e.state(), -1));
     std::cout << "luabind error: " << e.what() << " - " << error_message << std::endl;
+  }
+  catch (const std::exception& e)
+  {
+    std::cout << "error: " << e.what() << std::endl;
+  }
+  catch (...)
+  {
+    std::cout << "an unknown error occurred" << std::endl;
   }
 #endif
 

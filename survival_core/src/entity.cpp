@@ -7,6 +7,7 @@
 
 #include "application.h"
 #include "color.h"
+#include "common.h"
 #include "rendersystem.h"
 #include "steeringbehaviors.h"
 
@@ -20,7 +21,10 @@ Entity::Entity(Application* application) :
   _stateMachine(new ScriptedStateMachine<Entity>(this)),
   _mass(1.0),
   _maxSpeed(1.0),
-  _isCollidable(false)
+  _maxForce(1.0),
+  _maxTurnRate(TwoPi),
+  _isCollidable(false),
+  _isVisible(true)
 {
 }
 
@@ -133,6 +137,26 @@ void Entity::SetMaxSpeed(double maxSpeed)
   _maxSpeed = maxSpeed;
 }
 
+double Entity::GetMaxForce() const
+{
+  return _maxForce;
+}
+
+void Entity::SetMaxForce(double maxForce)
+{
+  _maxForce = maxForce;
+}
+
+double Entity::GetMaxTurnRate() const
+{
+  return _maxTurnRate;
+}
+
+void Entity::SetMaxTurnRate(double maxTurnRate)
+{
+  _maxTurnRate = maxTurnRate;
+}
+
 bool Entity::IsCollidable() const
 {
   return _isCollidable;
@@ -160,18 +184,35 @@ void Entity::Update(double deltaTime)
 
 void Entity::Render(RenderSystem* renderSystem)
 {
-  if (_script.is_valid())
+  if (!IsVisible())
   {
-    try
-    {
-      luabind::call_function<void>(_script["render"], _script, this, renderSystem);
-    }
-    catch (const luabind::error& e)
-    {
-      std::cout << "error in Entity::Render: " << e.what() << std::endl;
-      throw;
-    } 
+    return;
   }
+
+  if (!_script.is_valid())
+  {
+    throw std::runtime_error("script is invalid");
+  }
+
+  try
+  {
+    luabind::call_function<void>(_script["render"], _script, this, renderSystem);
+  }
+  catch (const std::exception& e)
+  {
+    ReportCallFunctionException("render", e);
+    throw;
+  }
+}
+
+bool Entity::IsVisible() const
+{
+   return _isVisible;
+}
+
+void Entity::SetIsVisible(bool isVisible)
+{
+  _isVisible = isVisible;
 }
 
 bool Entity::HasCollidedWith(Entity* other)
@@ -179,15 +220,26 @@ bool Entity::HasCollidedWith(Entity* other)
   double distanceSqr = GetPosition().DistanceToSqr(other->GetPosition());
   
   double totalRadius = GetBoundingRadius() + other->GetBoundingRadius();
-  
-  return distanceSqr < (totalRadius * totalRadius);
+  double totalRadiusSqr = totalRadius * totalRadius;
+
+  return distanceSqr < totalRadiusSqr;
 }
 
 void Entity::HandleCollisionWith(Entity* other)
 {
-  if (_script.is_valid())
+  if (!_script.is_valid())
+  {
+    throw std::runtime_error("script is invalid");
+  }
+
+  try
   {
     luabind::call_function<void>(_script["handle_collision_with"], _script, this, other);
+  }
+  catch (const std::exception& e)
+  {
+    ReportCallFunctionException("handle_collision_with", e);
+    throw;
   }
 }
 
@@ -223,10 +275,33 @@ void Entity::SetScript(const luabind::object& script)
 
 void Entity::Initialize()
 {
-  if (_script.is_valid())
+  if (!_script.is_valid())
+  {
+    throw std::runtime_error("script is invalid");
+  }
+
+  try
   {
     luabind::call_function<void>(_script["initialize"], _script, this);
   }
+  catch (const std::exception& e)
+  {
+    ReportCallFunctionException("initialize", e);
+    throw;
+  }
+}
+
+void Entity::ReportCallFunctionException(const std::string& functionName, const std::exception& e)
+{
+  std::cout << "error in function call to 'entity:" << functionName.c_str() << "': " << e.what() << std::endl;
+  std::cout << "- id: " << GetId() << std::endl;
+  std::cout << "- type: " << GetType().c_str() << std::endl;
+  std::cout << "- name: " << GetName().c_str() << std::endl;
+
+  std::cerr << "error in function call to 'entity:" << functionName.c_str() << "': " << e.what() << std::endl;
+  std::cerr << "- id: " << GetId() << std::endl;
+  std::cerr << "- type: " << GetType().c_str() << std::endl;
+  std::cerr << "- name: " << GetName().c_str() << std::endl;
 }
 
 void Entity::RegisterWithLua(lua_State* L)
@@ -251,8 +326,11 @@ void Entity::RegisterWithLua(lua_State* L)
       .property("heading", &Entity::GetHeading, &Entity::SetHeading)
       .property("mass", &Entity::GetMass, &Entity::SetMass)
       .property("max_speed", &Entity::GetMaxSpeed, &Entity::SetMaxSpeed)
+      .property("max_force", &Entity::GetMaxForce, &Entity::SetMaxForce)
+      .property("max_turn_rate", &Entity::GetMaxTurnRate, &Entity::SetMaxTurnRate)
       .property("is_collidable", &Entity::IsCollidable, &Entity::SetIsCollidadable)
       .property("bounding_radius", &Entity::GetBoundingRadius, &Entity::SetBoundingRadius)
-      .property("script", &Entity::GetScript, &Entity::SetScript)
+      .property("is_visible", &Entity::IsVisible, &Entity::SetIsVisible)
+      .property("script", &Entity::GetScript)
   ];
 }

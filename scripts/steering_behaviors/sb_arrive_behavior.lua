@@ -16,6 +16,10 @@ function SbArriveBehavior:set_deceleration(deceleration)
 end
 
 function SbArriveBehavior:calculate(entity)
+  if (entity == nil) then
+    error("entity is nil", 2)
+  end
+
   if (self.target == nil) then 
     return v2()
   end

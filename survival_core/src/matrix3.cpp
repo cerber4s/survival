@@ -135,13 +135,15 @@ Matrix3 Matrix3::CreateScaling(double scale)
 
 Matrix3 Matrix3::CreateRotation(double angleInRadians)
 {
+  // TODO: implement function to create rotation matrix based on normal vector (for performance reasons (sin/cos calls not needed)
+  
   double cos = std::cos(angleInRadians);
   double sin = std::sin(angleInRadians);
 
   Matrix3 out = Matrix3::CreateIdentity();
   out.Set(0, 0, cos);
-  out.Set(0, 1, sin);
-  out.Set(1, 0, -sin);
+  out.Set(0, 1, -sin);
+  out.Set(1, 0, sin);
   out.Set(1, 1, cos);
 
   return out;

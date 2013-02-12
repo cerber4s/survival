@@ -38,7 +38,7 @@ void LuaState::RunScript(const char* filename)
   if (int error = luaL_dofile(_luaState, filename))
   {
     const char* msg = lua_tolstring(_luaState, -1, 0);
-    throw std::runtime_error((boost::format("failed to run script '%s' [%d]: %s") % filename % error % msg).str());
+    throw std::runtime_error((boost::format("failed to run script '%s' [code: %d]:\r\n%s") % filename % error % msg).str());
   }
 }
 

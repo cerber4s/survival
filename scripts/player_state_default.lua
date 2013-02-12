@@ -1,11 +1,13 @@
 function create_player_state_default()
-  local player_state_default = {}
-
+  local player_state_default = entity_state_base:new('player_state_default')
+  
   function player_state_default:enter (player)
+    
     player.script.state_default = {
       fire_delay = 0,
+      fire_timeout = 3,
     }
-      
+	  	  
     player.script.render = function (self, player, gfx)
       local p = player.application.viewport_transformation * player.position
       
@@ -38,8 +40,6 @@ function create_player_state_default()
       gfx:draw_arc(p, player.bounding_radius - 4, -90.0, (360.0 * (1.0 - factor)), current_border_color, 2)
       
       gfx:draw_line(p, p + player.heading * 15, color(64, 192, 64), 2)
-      
-      --gfx:draw_text(p + v2(0, 20), color(128, 128, 0), string.format("%d", (1.0 / 60.0 * player.script.current_ttl)))
     end
   end
 
@@ -69,39 +69,34 @@ function create_player_state_default()
     end
     
     local bullet_range = 300.0
-    local bullet_initial_ttl = 60.0 * 2.0
+    local bullet_initial_ttl = 60.0 * 1.0
     local bullet_spawn_distance = 17
     
-    local bullets_per_second = 3200
-      
     local fire = (player.application.is_button_primary_pressed or player.application.is_left_mouse_button_pressed)
     if (player.script.state_default.fire_delay == 0 and fire) then
-      local bullet = player.application:spawn_entity(Bullet:new())
-	  
-	  bullet.position = player.position + player.heading * 20
-      bullet.velocity = player.heading:normal() * 8.0
-      bullet.heading = player.heading
+      local bullet = player.application:spawn_entity(Bullet:new {
+        position = player.position + player.heading * bullet_spawn_distance,
+        velocity = player.heading:normal() * (1.0 / bullet_initial_ttl * (bullet_range - bullet_spawn_distance)),
+        heading = player.heading,
+        
+        script = {
+          initial_ttl = bullet_initial_ttl,
+          ttl = bullet_initial_ttl,
+          player_flag = true,
+        },
+      })
       
-      bullet.script.initial_ttl = bullet_initial_ttl
-      bullet.script.ttl = bullet_initial_ttl
-      
-	  --[[
-      bullet.position = player.position + player.heading * bullet_spawn_distance
-      bullet.velocity = player.heading:normal() * (1.0 / bullet_initial_ttl * (bullet_range - bullet_spawn_distance))
-      bullet.heading = player.heading
-      
-      bullet.script.initial_ttl = bullet_initial_ttl
-      bullet.script.ttl = bullet_initial_ttl
-      ]]
-      player.script.state_default.fire_delay = math.floor(60.0 / bullets_per_second)
+      player.script.state_default.fire_delay = player.script.state_default.fire_timeout
     end
 
     player.velocity = player.velocity:truncate(player.max_speed)
     
     player.position = player.position + player.velocity 
     
+	-- todo: read resolution 
+	
     -- set viewport
-    player.application.viewport_translate = player.position - v2(400, 300)
+    player.application.viewport_translate = player.position - v2(1280 * 0.5, 800 * 0.5)
     
     local crosshair = player.application:get_entity_by_name("crosshair")
     player.heading = (crosshair.position - player.position):normal()
@@ -113,7 +108,6 @@ function create_player_state_default()
         entity.is_active = false
       end
     end
-    
   end
   
   return player_state_default

@@ -60,6 +60,14 @@ public:
     return *this;
   }
 
+  inline const Vector2d& operator/=(double rhs)
+  {
+    x /= rhs;
+    y /= rhs;
+
+    return *this;
+  }
+
   inline bool operator==(const Vector2d& rhs) const
   {
     if (this == &rhs)
@@ -93,6 +101,11 @@ inline Vector2d operator-(const Vector2d &lhs, const Vector2d &rhs)
 inline Vector2d operator*(const Vector2d &lhs, double rhs)
 {
   return Vector2d(lhs.x * rhs, lhs.y * rhs);
+}
+
+inline Vector2d operator/(const Vector2d &lhs, double rhs)
+{
+  return Vector2d(lhs.x / rhs, lhs.y / rhs);
 }
 
 inline std::ostream& operator<<(std::ostream& out, const Vector2d& rhs) 
