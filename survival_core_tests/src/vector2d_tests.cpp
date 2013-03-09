@@ -150,12 +150,18 @@ BOOST_AUTO_TEST_CASE( normal_test )
 
 BOOST_AUTO_TEST_CASE( distance_to_test )
 {
-  BOOST_FAIL( "not implemented" );
+  Vector2d a(0, 0);
+  Vector2d b(0, 10);
+
+  BOOST_REQUIRE_EQUAL(a.DistanceTo(b), 10);
 }
 
 BOOST_AUTO_TEST_CASE( distance_to_sqr_test )
 {
-  BOOST_FAIL( "not implemented" );
+  Vector2d a(0, 0);
+  Vector2d b(0, 10);
+
+  BOOST_REQUIRE_EQUAL(a.DistanceToSqr(b), 100);
 }
 
 BOOST_AUTO_TEST_CASE( angle_test )

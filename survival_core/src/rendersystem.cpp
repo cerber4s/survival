@@ -39,8 +39,8 @@ bool RenderSystem::Initialize()
     return false;
   }
   
-  //int display_flags = ALLEGRO_WINDOWED;
-  int display_flags = ALLEGRO_FULLSCREEN;
+  int display_flags = ALLEGRO_WINDOWED;
+  //int display_flags = ALLEGRO_FULLSCREEN;
 
   al_set_new_display_flags(display_flags); 
   

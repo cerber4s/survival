@@ -3,7 +3,7 @@
 
 #include "buttons.h"
 #include "collisionmanager.h"
-#include "luastate.h"
+#include "entitysetwrapper.h"
 #include "matrix3.h"
 #include "types.h"
 #include "vector2d.h"
@@ -19,6 +19,8 @@
 #include <vector>
 
 class Entity;
+class EntityManager;
+class LuaState;
 class RenderSystem;
 
 class Application
@@ -33,14 +35,16 @@ public:
   void Execute();
   
   Entity* SpawnEntity(const luabind::object& script);
+
+  const std::set<Entity*>& GetEntities() const;
+
+  Entity* GetEntityById(int entityId) const;
+  Entity* GetEntityByName(const std::string& name) const;
   
-  Entity* GetEntityById(int entityId);
-  Entity* GetEntityByName(const std::string& name);
+  const std::set<Entity*>& GetEntitiesByType(const std::string& type) const;
   
-  const std::vector<Entity*>& GetEntities() const { return _entities; }
-  
-  const std::set<Entity*>& GetEntitiesByType(const std::string& type);
-  
+  EntitySetWrapper GetEntitiesInRange(const Vector2d& position, double radius) const;
+
   bool IsButtonUpPressed() const { return IsButtonPressed(ButtonUp); }
   bool IsButtonDownPressed() const { return IsButtonPressed(ButtonDown); }
   bool IsButtonLeftPressed() const { return IsButtonPressed(ButtonLeft); }
@@ -61,27 +65,22 @@ public:
   Matrix3 GetViewportTransformation() const;
   Matrix3 GetViewportInverseTransformation() const;
   
+  RenderSystem* GetRenderSystem() const;
+
   static void RegisterWithLua(lua_State* L);
   
 private:
-  RenderSystem* _renderSystem;
+  std::unique_ptr<RenderSystem> _renderSystem;
   ALLEGRO_EVENT_QUEUE *_eventQueue;
   ALLEGRO_MOUSE_STATE _mouseState;
   
-  std::vector<Entity*> _entityPool;
-
-  std::vector<Entity*> _entities;
-  std::map<int, Entity*> _entityMap;
-  std::map<std::string, Entity*> _entityNamesMap;
-  std::map<std::string, std::set<Entity*>> _entityTypesMap; 
-  
-  std::vector<Entity*> _spawnedEntities;
+  std::unique_ptr<EntityManager> _entityManager;
     
   std::unique_ptr<LuaState> _luaState;
   luabind::object _script;  
   luabind::object _applicationScript;
   
-  CollisionManager _collisionManager;
+  std::unique_ptr<CollisionManager> _collisionManager;
 
   Vector2d _viewportTranslate;
   Matrix3 _viewportTransformation;
@@ -109,7 +108,7 @@ private:
   
   bool _keyStates[ALLEGRO_KEY_MAX];
   bool _previousKeyStates[ALLEGRO_KEY_MAX];
-  
+    
   Application(const Application& other);
 
   void CalculateViewportTransformations();

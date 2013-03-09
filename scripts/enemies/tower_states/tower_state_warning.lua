@@ -32,6 +32,7 @@ function create_tower_state_warning()
     end
     
     if (state_data.tick > state_data.max_tick) then
+      --[[
       local kamikaze = tower.application:spawn_entity(Kamikaze:new {})
 
       local spawn_direction = v2(-1 + (math.random() * 2), -1 + (math.random() * 2)):normal()
@@ -40,6 +41,10 @@ function create_tower_state_warning()
       kamikaze.velocity = v2()
       kamikaze.heading = v2()
       kamikaze.bounding_radius = 10
+      ]]
+      local kamikaze = tower.application:spawn_entity(Kamikaze:new {
+        position = tower.position + (delta:normal() * tower.script.kamikaze_spawn_radius)
+      })
       
       state_data.tick = 0      
     end

@@ -28,8 +28,8 @@ function create_bullet_state_default()
         
         gfx:draw_line(p, p + (bullet.heading * -5), color(r, g, b, 0.25 + (0.75 * alpha)), 1)
         
-        gfx:draw_filled_circle(p, bullet.bounding_radius, color(r, g, b, alpha))
-        gfx:draw_circle(p, bullet.bounding_radius, color(192, 64, 0, 0.75 + (0.25 * alpha)), 1)
+        gfx:draw_filled_circle(p, 2.0, color(r, g, b, alpha))
+        gfx:draw_circle(p, 2.0, color(192, 64, 0, 0.75 + (0.25 * alpha)), 1)
 
       end
     end 
@@ -40,7 +40,7 @@ function create_bullet_state_default()
 
   function bullet_state_default:execute (bullet)
     bullet.script.ttl = bullet.script.ttl - 1
-    if (bullet.script.ttl == 0) then
+    if (bullet.script.ttl <= 0) then
       bullet:change_current_state(bullet_state_destroy)
     end
   

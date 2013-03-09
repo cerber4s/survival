@@ -22,10 +22,26 @@ set(Luabind_DEBUG_LIBS luabindd)
 set(Luabind_OPTIMIZED_LIBS luabind)
 add_definitions(-DLUABIND_DYNAMIC_LINK)
 
-set(Allegro_INCLUDE_DIR d:/projects/kevin/libs/allegro-5.0.8-msvc-10.0/include)
-set(Allegro_LIBRARY_DIRS d:/projects/kevin/libs/allegro-5.0.8-msvc-10.0/lib)
-set(Allegro_DEBUG_LIBS allegro-5.0.8-monolith-md-debug)
-set(Allegro_OPTIMIZED_LIBS allegro-5.0.8-monolith-md)
+set(Allegro_INCLUDE_DIR 
+	D:/Projects/Kevin/libs/allegro-5.0.9/allegro/include 
+	D:/Projects/Kevin/libs/allegro-5.0.9/allegro/bin/include
+	D:/Projects/Kevin/libs/allegro-5.0.9/allegro/addons/font
+	D:/Projects/Kevin/libs/allegro-5.0.9/allegro/addons/ttf
+	D:/Projects/Kevin/libs/allegro-5.0.9/allegro/addons/image
+	D:/Projects/Kevin/libs/allegro-5.0.9/allegro/addons/primitives)
+set(Allegro_LIBRARY_DIRS D:/Projects/Kevin/libs/allegro-5.0.9/allegro/bin/lib/RelWithDebInfo)
+set(Allegro_DEBUG_LIBS 
+	allegro
+	allegro_image
+	allegro_primitives
+	allegro_font
+	allegro_ttf)
+set(Allegro_OPTIMIZED_LIBS 
+	allegro
+	allegro_image
+	allegro_primitives
+	allegro_font
+	allegro_ttf)
 
 # project settings
 set(SURVIVAL_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)

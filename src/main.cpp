@@ -1,3 +1,10 @@
+#if WIN32
+#define _CRTDBG_MAP_ALLOC 
+#define _CRTDBG_MAPALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+#endif
+
 #include <iostream>
 #include <memory>
 #include <sstream>
@@ -5,43 +12,43 @@
 #include <lua.hpp>
 #include <luabind/luabind.hpp>
 
+#include <allegro5/allegro.h>
+
 #include "application.h"
 
 int add_file_and_line(lua_State* L);
 
-#define SURVIVAL_OPTION_CATCH_EXCEPTION
-
 int main(int argc, char **argv) 
 {
-  luabind::set_pcall_callback(add_file_and_line);
+#if WIN32
+  _CrtSetReportMode( _CRT_ERROR, _CRTDBG_MODE_DEBUG );
+  _CrtSetDbgFlag ( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
+#endif
 
-#ifdef SURVIVAL_OPTION_CATCH_EXCEPTION  
+  luabind::set_pcall_callback(add_file_and_line);  
+  
   try
   {
-#endif
     std::unique_ptr<Application> application(new Application());
     if (application->Initialize())
     {
-      application->Execute();  
+      application->Execute();
+      application->UnInitialize();
     }
-    application->UnInitialize();
-
-#ifdef SURVIVAL_OPTION_CATCH_EXCEPTION
   }
   catch (const luabind::error& e)
   {
     luabind::object error_message(luabind::from_stack(e.state(), -1));
-    std::cout << "luabind error: " << e.what() << " - " << error_message << std::endl;
+    std::cerr << "luabind error: " << e.what() << " - " << error_message << std::endl;
   }
   catch (const std::exception& e)
   {
-    std::cout << "error: " << e.what() << std::endl;
+    std::cerr << "error: " << e.what() << std::endl;
   }
   catch (...)
   {
-    std::cout << "an unknown error occurred" << std::endl;
+    std::cerr << "an unknown error occurred" << std::endl;
   }
-#endif
 
   return 0;
 }

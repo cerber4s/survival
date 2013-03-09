@@ -5,6 +5,7 @@
 #include <luabind/luabind.hpp>
 
 #include <string>
+#include <memory>
 
 #include "scriptedstatemachine.h"
 #include "vector2d.h"
@@ -16,6 +17,8 @@ class SteeringBehaviors;
 class Entity
 {
 public:
+  //static Entity* Create();
+
   Entity(Application* application);
   virtual ~Entity();
   
@@ -33,6 +36,7 @@ public:
   bool IsOfType(const luabind::object& script) const;
   
   Vector2d GetPosition() const;
+  //void SetPosition(double x, double y);
   void SetPosition(const Vector2d& position);
   
   Vector2d GetVelocity() const;
@@ -79,24 +83,24 @@ public:
   void SetCurrentState(const luabind::object& state);
   
   luabind::object& GetScript();
-  void SetScript(const luabind::object& script);
   
-  void Initialize();
-  
+  void Initialize(const luabind::object& script);
+  void Reset();
+
   static void RegisterWithLua(lua_State* L);
   
 private:
   static int _nextId;
   
   Application* _application;
-  SteeringBehaviors* _steeringBehaviors;
+  std::unique_ptr<SteeringBehaviors> _steeringBehaviors;
 
   int _id;
   std::string _name;
   std::string _type;
   bool _isActive;
   
-  ScriptedStateMachine<Entity>* _stateMachine;
+  std::unique_ptr<ScriptedStateMachine<Entity>> _stateMachine;
   
   Vector2d _position;
   Vector2d _velocity;

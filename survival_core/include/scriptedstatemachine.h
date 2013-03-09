@@ -5,6 +5,9 @@
 #include <luabind/luabind.hpp>
 #include <luabind/function.hpp>
 
+#include <iostream>
+#include <exception>
+
 template <class context_type>
 class ScriptedStateMachine
 {
@@ -28,6 +31,8 @@ private:
   luabind::object _currentState;
   context_type* _context;
   
+  void SafeCall(const std::string& stateName, const luabind::object& stateObject, const std::string& functionName);
+
 };
 
 template <class context_type>
@@ -39,6 +44,12 @@ ScriptedStateMachine<context_type>::ScriptedStateMachine(context_type* context)
 template <class context_type>
 ScriptedStateMachine<context_type>::~ScriptedStateMachine()
 {
+  auto x = GetGlobalState();
+  ChangeGlobalState(x);
+  _globalState.swap(luabind::object());
+  _currentState.swap(luabind::object());
+  //ChangeGlobalState();
+  //ChangeCurrentState(luabind::object());
 }
 
 template <class context_type>
@@ -69,46 +80,47 @@ void ScriptedStateMachine<context_type>::SetCurrentState(const luabind::object& 
 template <class context_type>
 void ScriptedStateMachine<context_type>::ChangeGlobalState(const luabind::object& state)
 {
-  if (_globalState.is_valid())
-  {
-    luabind::call_function<void>(_globalState["exit"], _globalState, _context);
-  }
+  SafeCall("global", _globalState, "exit");
   
   _globalState = state;
   
-  if (_globalState.is_valid())
-  {
-    luabind::call_function<void>(_globalState["enter"], _globalState, _context);
-  }
+  SafeCall("global", _globalState, "enter");
 }
 
 template <class context_type>
 void ScriptedStateMachine<context_type>::ChangeCurrentState(const luabind::object& state)
 {
-  if (_currentState.is_valid())
-  {
-    luabind::call_function<void>(_currentState["exit"], _currentState, _context);
-  }
+  SafeCall("current", _currentState, "exit");
   
   _currentState = state;
   
-  if (_currentState.is_valid())
-  {
-    luabind::call_function<void>(_currentState["enter"], _currentState, _context);
-  }
+  SafeCall("current", _currentState, "enter");
 }
 
 template <class context_type>
 void ScriptedStateMachine<context_type>::Execute()
 {
-  if (_globalState.is_valid())
+  SafeCall("global", _globalState, "execute");
+  SafeCall("current", _currentState, "execute");
+}
+
+template <class context_type>
+void ScriptedStateMachine<context_type>::SafeCall(const std::string& stateName, const luabind::object& stateObject, const std::string& functionName)
+{
+  try
   {
-    luabind::call_function<void>(_globalState["exit"], _globalState, _context);
+    if (stateObject.is_valid())
+    {
+      luabind::call_function<void>(stateObject[functionName], stateObject, _context);
+    }
   }
-  
-  if (_currentState.is_valid())
+  catch (const std::exception& e)
   {
-    luabind::call_function<void>(_currentState["execute"], _currentState, _context);
+    std::cerr << "error in function call to 'scriptedstatemachine:" << functionName.c_str() << "' (" << stateName.c_str() << "): " << e.what() << std::endl;
+    std::cerr << "entity id:" << _context->GetId() << std::endl;
+    std::cerr << "entity type:" << _context->GetType() << std::endl;
+    std::cerr << "entity name:" << _context->GetName() << std::endl;
+    throw;
   }
 }
 

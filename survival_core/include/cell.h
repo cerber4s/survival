@@ -11,7 +11,9 @@ class Entity;
 class Cell
 {
 public:
-  Cell(int maxEntities, const Vector2d& topLeft, const Vector2d& bottomRight);
+  Cell(int left, int top, int right, int bottom, int maxEntities);
+  Cell(const Vector2d& topLeft, const Vector2d& bottomRight, int maxEntities);
+  Cell(const BoundingBox& bounds, int maxEntities);
   virtual ~Cell();
 
   void Add(Entity* entity);
@@ -20,18 +22,30 @@ public:
 
   void Clear();
 
+  const BoundingBox& GetBounds() const;
+
   const std::set<Entity*>& GetEntities() const;
+  std::set<Entity*> GetEntitiesInRange(double x, double y, double radiusSqr) const;
+  std::set<Entity*> GetEntitiesInRange(const Vector2d& position, double radiusSqr) const;
 
   void HandleCollisions();
 
-//private:
-  BoundingBox _boundingBox;
+private:
+  BoundingBox _bounds;
   int _maxEntities;
   std::set<Entity*> _entities;
+  std::set<Entity*> _oversizedEntities;
   Cell** _subCells;
 
   void ClearSubCells();
   int GetCellIndex(const Vector2d& position);
+
+  void AddToSubCell(Entity* entity);
+
+  void HandleCollisions(const std::set<Entity*>& oversizedEntities);
+  void GetEntitiesInRange(const Vector2d& position, double radius, std::set<Entity*>& entitiesInRange) const;
+
+  void ValidateBounds(const Vector2d& position);
 
 };
 

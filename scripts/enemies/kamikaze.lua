@@ -22,7 +22,9 @@ Kamikaze = Entity:new {
   script = {
     is_destroyed = false,
     
-    steering_behaviors = SteeringBehaviors:new(),
+    steering_behaviors = SteeringBehaviors:new {
+      arrive = SbArriveBehavior:new {},
+    },
     
     activate_distance = activate_distance,
     activate_distance_sqr = activate_distance * activate_distance,

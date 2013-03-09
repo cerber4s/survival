@@ -4,7 +4,11 @@ require "scripts/entity_state_destroy"
 
 function create_entity() 
   local Entity = {
-    ctor_args = {},
+    ctor_args = {
+      script = {
+        update_is_visible = true,
+      },
+    },
   }
   
   local Set = function(values)
@@ -31,6 +35,7 @@ function create_entity()
     "initial_current_state",
   }
   
+  --[[
   local debug_print_table = function(caption, t)
     if (t == nil) then
       print( caption .. "empty table")
@@ -57,6 +62,7 @@ function create_entity()
     end  
     print()
   end
+  --]]
   
   function Entity:new (args)
     args = args or {}
@@ -129,8 +135,15 @@ function create_entity()
     }
     
     for key, value in pairs(default_args_values) do      
-      --print( "setting key '" .. key .. "' for entity type '" .. self.type .. "'") 
-      entity[key] = self.ctor_args[key] or args[key] or value          
+      local value_to_set = value
+      if (not (self.ctor_args[key] == nil)) then
+        value_to_set = self.ctor_args[key]
+      elseif (not (args[key] == nil)) then
+        value_to_set = args[key]
+      end
+      
+      --self.ctor_args[key] or args[key] or value          
+      entity[key] = value_to_set
     end
     
     for key, value in pairs(args.script or {}) do

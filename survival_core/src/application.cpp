@@ -1,6 +1,7 @@
 #include "application.h"
 
 #include <algorithm>
+#include <cassert>
 #include <iostream>
 #include <cmath>
 #include <ctime>
@@ -14,16 +15,16 @@
 #include <luabind/function.hpp>
 #include <luabind/iterator_policy.hpp>
 
-#include "rendersystem.h"
 #include "entity.h"
+#include "entitymanager.h"
+#include "luastate.h"
 #include "random.h"
+#include "rendersystem.h"
 
 Application::Application() :
-  _renderSystem(nullptr),
-  _eventQueue(nullptr),
-  _luaState(new LuaState()),
-  _collisionManager(1024 * 32)
+  _eventQueue(nullptr)
 {
+  _luaState = std::unique_ptr<LuaState>(new LuaState());
   _luaState->RunScript("scripts/application.lua");
   
   _script = luabind::globals(_luaState->GetLuaState());
@@ -32,12 +33,8 @@ Application::Application() :
     throw std::runtime_error("failed to acquire script globals");
   }
   
-  int entityPoolSize = 1024 * 16;
-  _entityPool = std::vector<Entity*>(entityPoolSize);
-  for (int i = (int)_entityPool.size() - 1; i >= 0; i--)
-  {
-    _entityPool[i] = new Entity(this);
-  }
+  _entityManager = std::unique_ptr<EntityManager>(new EntityManager(this, 1024 * 16));
+  _collisionManager = std::unique_ptr<CollisionManager>(new CollisionManager(-16 * 1024, -16 * 1024, 16 * 1024, 16 * 1024, 32));
   
   CalculateViewportTransformations();
   
@@ -47,39 +44,41 @@ Application::Application() :
 
 Application::~Application()
 {
-  _entityNamesMap.clear();
-  
-  BOOST_FOREACH(Entity* entity, _entityPool)
+  if (_entityManager)
   {
-    delete entity;
+    _entityManager->ActivateSpawnedEntities();
+    
+    std::set<Entity*> entities;
+    _entityManager->GetActiveEntities(entities);
+
+    BOOST_FOREACH(Entity* entity, entities)
+    {
+      _entityManager->Free(entity);
+    }
+
+    delete _entityManager.release();
   }
-  _entityPool.clear();
-  
-  BOOST_FOREACH(Entity* entity, _spawnedEntities)
+
+  _applicationScript.swap(luabind::object());
+  _script.swap(luabind::object());
+
+  if (_luaState)
   {
-    delete entity;
+    delete _luaState.release();
   }
-  _spawnedEntities.clear();
-  
-  BOOST_FOREACH(Entity* entity, _entities)
-  {
-    delete entity;
-  }
-  _entities.clear();
-  _entityMap.clear();
 }
 
 bool Application::Initialize()
 { 
   Random::Initialize();
-
+  
   if(!al_init()) 
   {
     std::cout << "failed to initialize allegro" << std::endl;
     return false;
   }
-  
-  _renderSystem = new RenderSystem(this);
+
+  _renderSystem = std::unique_ptr<RenderSystem>(new RenderSystem(this));
   if (!_renderSystem->Initialize())
   {
     std::cout << "failed to initialize graphics context" << std::endl;
@@ -136,25 +135,20 @@ bool Application::Initialize()
 }
 
 void Application::UnInitialize()
-{ 
-  luabind::object invalidState;
-  BOOST_FOREACH(Entity* entity, _entities)
+{
+  if (_eventQueue)
   {
-    entity->SetCurrentState(invalidState);
+    //al_unregister_event_source(_eventQueue, al_get_keyboard_event_source());
+    //al_unregister_event_source(_eventQueue, al_get_mouse_event_source());
+    //al_unregister_event_source(_eventQueue, al_get_display_event_source(_renderSystem->GetDisplay()));
+
+    al_destroy_event_queue(_eventQueue);
+    _eventQueue = NULL;
   }
-  
+
   if (_renderSystem)
   {
     _renderSystem->UnInitialize();
-    
-    delete _renderSystem;
-    _renderSystem = NULL;
-  }
-  
-  if (_eventQueue)
-  {
-    al_destroy_event_queue(_eventQueue);
-    _eventQueue = NULL;
   }
 }
 
@@ -204,63 +198,40 @@ void Application::Execute()
 
 Entity* Application::SpawnEntity(const luabind::object& script)
 {
-  if (_entityPool.empty())
-  {
-    throw std::runtime_error("no more entities available");
-  }
-  
-  Entity* entity = _entityPool.back();
-  entity->SetScript(script);
-  entity->Initialize();
-
-  EnsureEntityNameIsNotRegistered(entity->GetName());
-  
-  _entityPool.pop_back();
-  _spawnedEntities.push_back(entity);
-  
-  _entityNamesMap[entity->GetName()] = entity;
-
-  std::map<std::string, std::set<Entity*>>::iterator i = _entityTypesMap.find(entity->GetType());
-  if (i == _entityTypesMap.end())
-  {
-    _entityTypesMap[entity->GetType()] = std::set<Entity*>();
-    _entityTypesMap[entity->GetType()].insert(entity);
-  }
-  else
-  {
-    (*i).second.insert(entity);
-  }
-  
-  _collisionManager.Add(entity);
-
-  return entity;
-}
-
-Entity* Application::GetEntityById(int entityId)
-{
-  std::map<int, Entity*>::const_iterator i = _entityMap.find(entityId);  
-  
   Entity* entity = nullptr;
-  if (i != _entityMap.end())
+  if (!_entityManager->TrySpawn(&entity, script))
   {
-    entity = (*i).second;
+    throw std::runtime_error("unable to spawn entity, no entities available (max. entity count reached)");
   }
- 
+  
+  _collisionManager->Add(entity);
+
   return entity;
 }
 
-Entity* Application::GetEntityByName(const std::string& name)
+const std::set<Entity*>& Application::GetEntities() const
 {
-  std::map<std::string, Entity*>::const_iterator i = _entityNamesMap.find(name);  
-  return (i != _entityNamesMap.end()) ? (*i).second : nullptr;
+  return _entityManager->GetActiveEntities();
 }
 
-const std::set<Entity*>& Application::GetEntitiesByType(const std::string& type)
+Entity* Application::GetEntityById(int entityId) const
 {
-  static std::set<Entity*> emptyResult;
+  return _entityManager->GetEntityById(entityId);
+}
 
-  std::map<std::string, std::set<Entity*>>::const_iterator i = _entityTypesMap.find(type);
-  return (i != _entityTypesMap.end()) ? (*i).second : emptyResult;
+Entity* Application::GetEntityByName(const std::string& name) const
+{
+  return _entityManager->GetEntityByName(name);
+}
+
+const std::set<Entity*>& Application::GetEntitiesByType(const std::string& type) const
+{
+  return _entityManager->GetEntitiesByType(type);
+}
+
+EntitySetWrapper Application::GetEntitiesInRange(const Vector2d& position, double radius) const
+{
+  return EntitySetWrapper(_collisionManager->GetEntitiesInRange(position, radius));
 }
 
 void Application::CalculateViewportTransformations()
@@ -278,16 +249,7 @@ bool Application::Update()
     return false;
   }
 
-  if (!_spawnedEntities.empty())
-  {
-    std::copy(_spawnedEntities.begin(), _spawnedEntities.end(), std::back_inserter(_entities));
-    BOOST_FOREACH(Entity* entity, _spawnedEntities)
-    {
-      _entityMap[entity->GetId()] = entity;
-    }
-    
-    _spawnedEntities.clear();
-  }
+  _entityManager->ActivateSpawnedEntities();
   
   try
   {
@@ -299,12 +261,12 @@ bool Application::Update()
     throw;
   }
 
-  BOOST_FOREACH(Entity* entity, _entities)
+  BOOST_FOREACH(Entity* entity, _entityManager->GetActiveEntities())
   {
     Vector2d previousPosition = entity->GetPosition();
 
     entity->Update(1.0);
-    _collisionManager.Update(entity, previousPosition);
+    _collisionManager->Update(entity, previousPosition);
   }
 
   ClearInactiveEntities();
@@ -327,7 +289,7 @@ void Application::Render()
  
   try
   {
-    luabind::call_function<void>(_applicationScript["render"], _applicationScript, this, _renderSystem);  
+    luabind::call_function<void>(_applicationScript["render"], _applicationScript, this, _renderSystem.get());  
   }
   catch (const std::exception& e)
   {
@@ -416,34 +378,22 @@ void Application::InitializeKeyStates()
 
 void Application::ClearInactiveEntities()
 {
-  auto i = _entities.begin();
-  while (i != _entities.end())
+  std::set<Entity*> activeEntities;
+  _entityManager->GetActiveEntities(activeEntities);
+
+  std::set<Entity*>::iterator i = activeEntities.begin();
+  while (i != activeEntities.end())
   {
-    Entity* entity = *i; 
+    Entity* entity = *i;
     if (!entity->IsActive())
     {
-      _entityPool.push_back(entity);
-      
-      _entityMap.erase(entity->GetId());
-      
-      _entityNamesMap.erase(entity->GetName());
-      
-      std::map<std::string, std::set<Entity*>>::iterator i2 = _entityTypesMap.find(entity->GetType());
-      if (i2 != _entityTypesMap.end())
-      {
-        (*i2).second.erase(entity);
-      }    
-      else
-      {
-        throw std::runtime_error((boost::format("type '%s' not found in entity types map") % entity->GetType()).str());
-      }
-      
-      _collisionManager.Remove(entity);
-
-      i = _entities.erase(i);
+      _entityManager->Free(entity);
+      _collisionManager->Remove(entity);
+    
+      i = activeEntities.erase(i);
     }
     else
-    { 
+    {
       i++;
     }
   }
@@ -451,7 +401,7 @@ void Application::ClearInactiveEntities()
 
 void Application::HandleCollisions()
 {
-  _collisionManager.HandleCollisions();
+  _collisionManager->HandleCollisions();
 }
 
 bool Application::IsButtonPressed(const Buttons& button) const
@@ -515,6 +465,11 @@ void Application::EnsureEntityNameIsNotRegistered(const std::string& name)
   }
 }
 
+RenderSystem* Application::GetRenderSystem() const
+{
+  return _renderSystem.get();
+}
+
 void Application::RegisterWithLua(lua_State* L)
 {
   luabind::module(L)
@@ -524,6 +479,7 @@ void Application::RegisterWithLua(lua_State* L)
       .def("get_entity_by_id", &Application::GetEntityById)
       .def("get_entity_by_name", &Application::GetEntityByName)
       .def("get_entities_by_type", &Application::GetEntitiesByType, luabind::return_stl_iterator)
+      .def("get_entities_in_range", &Application::GetEntitiesInRange)
       .property("is_button_up_pressed", &Application::IsButtonUpPressed)
       .property("is_button_down_pressed", &Application::IsButtonDownPressed)
       .property("is_button_left_pressed", &Application::IsButtonLeftPressed)
@@ -538,5 +494,6 @@ void Application::RegisterWithLua(lua_State* L)
       .property("viewport_transformation", &Application::GetViewportTransformation)
       .property("viewport_inverse_transformation", &Application::GetViewportInverseTransformation)
       .property("entities", &Application::GetEntities, luabind::return_stl_iterator)
-  ];    
+      .property("gfx", &Application::GetRenderSystem)
+  ];
 }

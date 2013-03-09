@@ -6,6 +6,7 @@
 class BoundingBox
 {
 public:
+  BoundingBox(double left, double top, double right, double bottom);
   BoundingBox(const Vector2d& topLeft, const Vector2d& bottomRight);
 
   bool IsOverlappedWith(const BoundingBox& other);
@@ -21,6 +22,13 @@ public:
   double GetBottom() const;
   double GetLeft() const;
   double GetRight() const;
+
+  double GetWidth() const;
+  double GetHeight() const;
+
+  bool Contains(double x, double y) const;
+  bool Contains(const Vector2d& position) const;
+  bool Contains(const BoundingBox& other) const;
 
 private:
   Vector2d _topLeft;

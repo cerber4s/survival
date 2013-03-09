@@ -7,6 +7,7 @@
 #include "application.h"
 #include "color.h"
 #include "entity.h"
+#include "entitysetwrapper.h"
 #include "matrix3.h"
 #include "rendersystem.h"
 #include "steeringbehaviors.h"
@@ -47,6 +48,7 @@ void LuaState::RegisterClasses(lua_State* L)
   Application::RegisterWithLua(L);
   Color::RegisterWithLua(L);
   Entity::RegisterWithLua(L);
+  EntitySetWrapper::RegisterWithLua(L);
   Matrix3::RegisterWithLua(L);
   RenderSystem::RegisterWithLua(L);
   SteeringBehaviors::RegisterWithLua(L);

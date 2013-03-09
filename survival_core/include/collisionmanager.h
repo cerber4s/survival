@@ -1,6 +1,7 @@
 #ifndef COLLISIONMANAGER_H
 #define COLLISIONMANAGER_H
 
+#include "boundingbox.h"
 #include "cell.h"
 #include "vector2d.h"
 
@@ -11,7 +12,9 @@ class Entity;
 class CollisionManager
 {
 public:
-  CollisionManager(int maxEntitiesPerCel);
+  CollisionManager(double left, double top, double right, double bottom, int maxEntitiesPerCel);
+  CollisionManager(const Vector2d& topLeft, const Vector2d& bottomRight, int maxEntitiesPerCel);
+  CollisionManager(const BoundingBox& size, int maxEntitiesPerCel);
   
   void Add(Entity* entity);
   void Remove(Entity* entity);
@@ -21,7 +24,10 @@ public:
 
   void HandleCollisions();
 
-//private:
+  std::set<Entity*> GetEntitiesInRange(double x, double y, double radius) const;
+  std::set<Entity*> GetEntitiesInRange(const Vector2d& position, double radius) const;
+
+private:
   std::unique_ptr<Cell> _root;
 
 };

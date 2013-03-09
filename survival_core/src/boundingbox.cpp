@@ -1,10 +1,18 @@
 #include "boundingbox.h"
 
+BoundingBox::BoundingBox(double left, double top, double right, double bottom)  : 
+  _topLeft(Vector2d(left, top)), 
+  _bottomRight(Vector2d(bottom, right)),
+  _size(Vector2d(right - left, bottom - top)),
+  _center(Vector2d(left + right, top + bottom) * 0.5)
+{
+}
+
 BoundingBox::BoundingBox(const Vector2d& topLeft, const Vector2d& bottomRight) : 
   _topLeft(topLeft), 
   _bottomRight(bottomRight),
   _size((bottomRight - topLeft)),
-  _center((topLeft + bottomRight) * 0.5)
+  _center(Vector2d(topLeft + bottomRight) * 0.5)
 {
 }
 
@@ -54,4 +62,32 @@ double BoundingBox::GetLeft() const
 double BoundingBox::GetRight() const
 {
   return _bottomRight.x;
+}
+
+double BoundingBox::GetWidth() const
+{
+  return _size.x;
+}
+
+double BoundingBox::GetHeight() const
+{
+  return _size.y;
+}
+
+bool BoundingBox::Contains(double x, double y) const
+{
+  return x >= GetLeft() && y >= GetTop() &&
+    x <= GetRight() && y <= GetBottom();
+}
+
+bool BoundingBox::Contains(const Vector2d& position) const
+{
+  return position.x >= GetLeft() && position.y >= GetTop() &&
+    position.x <= GetRight() && position.y <= GetBottom();
+}
+
+bool BoundingBox::Contains(const BoundingBox& other) const
+{
+  return other.GetLeft() >= GetLeft() && other.GetRight() <= GetRight() &&
+    other.GetTop() >= GetTop() && other.GetBottom() <= GetBottom();
 }

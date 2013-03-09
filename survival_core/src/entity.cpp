@@ -3,6 +3,8 @@
 #include <cmath>
 #include <string>
 
+#include <boost/format.hpp>
+
 #include <luabind/function.hpp>
 
 #include "application.h"
@@ -30,11 +32,6 @@ Entity::Entity(Application* application) :
 
 Entity::~Entity()
 {
-  delete _stateMachine;
-  _stateMachine = nullptr;
-  
-  delete _steeringBehaviors;
-  _steeringBehaviors = nullptr;
 }
 
 Application* Entity::GetApplication() const
@@ -44,7 +41,7 @@ Application* Entity::GetApplication() const
 
 SteeringBehaviors* Entity::GetSteeringBehaviors() const
 {
-  return _steeringBehaviors;
+  return _steeringBehaviors.get();
 }
 
 int Entity::GetId() const
@@ -91,6 +88,11 @@ Vector2d Entity::GetPosition() const
 {
     return _position;
 }
+
+//void Entity::SetPosition(double x, double y)
+//{
+//  _position = Vector2d(x, y);
+//}
 
 void Entity::SetPosition(const Vector2d& position)
 {
@@ -268,16 +270,17 @@ luabind::object& Entity::GetScript()
   return _script;
 }
 
-void Entity::SetScript(const luabind::object& script)
+void Entity::Initialize(const luabind::object& script)
 {
   _script = script;
-}
-
-void Entity::Initialize()
-{
   if (!_script.is_valid())
   {
-    throw std::runtime_error("script is invalid");
+    SetType((boost::format("entity")).str());
+    SetName((boost::format("entity-%d") % GetId()).str());
+
+    SetIsActive(true);
+
+    return;
   }
 
   try
@@ -291,17 +294,18 @@ void Entity::Initialize()
   }
 }
 
+void Entity::Reset()
+{
+  _stateMachine->ChangeCurrentState(luabind::object());
+  _stateMachine->ChangeGlobalState(luabind::object());
+}
+
 void Entity::ReportCallFunctionException(const std::string& functionName, const std::exception& e)
 {
   std::cout << "error in function call to 'entity:" << functionName.c_str() << "': " << e.what() << std::endl;
   std::cout << "- id: " << GetId() << std::endl;
   std::cout << "- type: " << GetType().c_str() << std::endl;
   std::cout << "- name: " << GetName().c_str() << std::endl;
-
-  std::cerr << "error in function call to 'entity:" << functionName.c_str() << "': " << e.what() << std::endl;
-  std::cerr << "- id: " << GetId() << std::endl;
-  std::cerr << "- type: " << GetType().c_str() << std::endl;
-  std::cerr << "- name: " << GetName().c_str() << std::endl;
 }
 
 void Entity::RegisterWithLua(lua_State* L)

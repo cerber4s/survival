@@ -18,15 +18,16 @@ function create_kamikaze_state_move()
     state_data.current_tick = 0
     state_data.max_tick = 60 * 2.0
     
-    local player = kamikaze.application:get_entity_by_name("player")        
-    kamikaze.script.steering_behaviors.arrive:set_target(player)
+    local player = kamikaze.application:get_entity_by_name("player")
+    --kamikaze.script.steering_behaviors.arrive:set_target(player)
   end
 
   function kamikaze_state_move:exit_impl(kamikaze, state_data)
-	  kamikaze.script.steering_behaviors.arrive:set_target(nil)
+	  --kamikaze.script.steering_behaviors.arrive:set_target(nil)
 	end
 
   function kamikaze_state_move:execute_impl(kamikaze, state_data)
+    --[[
     local force = kamikaze.script.steering_behaviors:calculate(kamikaze)
     kamikaze.velocity = (kamikaze.velocity + force):truncate(kamikaze.max_speed)   
     kamikaze.position = kamikaze.position + kamikaze.velocity
@@ -46,6 +47,7 @@ function create_kamikaze_state_move()
       kamikaze:change_current_state(kamikaze_state_charge)
       return
     end
+    ]]
   end
 
   return kamikaze_state_move
